@@ -1,0 +1,63 @@
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Document</title>
+	<script defer src="./node_modules/twgl.js/dist/4.x/twgl-full.js"></script>
+	<script defer src="./main.js" type="module"></script>
+	<style>
+		html,body {
+			padding: 0;
+			margin: 0;
+		}
+
+		.controls {
+			position: fixed;
+			display: flex;
+			flex-direction: column;
+			align-items: stretch;
+			top:5px;
+			right: 5px;
+			padding: 2px;
+			background-color: rgba(255,255,255,.4);
+		}
+
+		.controls__row{
+			padding: 2px;
+			display: grid;
+			grid-template-columns: repeat(2, minmax(min-content, 120px));
+			grid-column-gap: 5px;
+			justify-content: end;
+		}
+
+		canvas{
+			outline: 1px solid red;
+		}
+	</style>
+</head>
+<body>
+	<canvas width=600 height=600></canvas>
+	<div class="controls">
+		<div class="controls__row">
+			<input class="winput" type="number" placeholder="width" value="0">
+			<input class="hinput" type="number" placeholder="height" value="0">
+		</div>
+		<div class="controls__row">
+			<input class="txinput" type="number" placeholder="tile width" value="200">
+			<input class="tyinput" type="number" placeholder="time height" value="160">
+		</div>
+		<div class="controls__row">
+			<input type="number" class="zinput" value="1" min="1" max="8" placeholder="scale">
+			<select class="src"></select><br/>
+		</div>
+		<div class="controls__row">
+			<select class="action">
+				<option selected>Tile</option>
+				<option>Image</option>
+			</select>
+			<button class="genb" >Generate</button>
+		</div>
+	</div>
+</body>
+</html>
