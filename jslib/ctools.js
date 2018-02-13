@@ -47,19 +47,13 @@ export class C {
 	}
 
 	setProgram(programSource) {
+		if (this.programSource === programSource) return;
 		this.programSource = programSource;
 		const program = this.getProgram(...this.programSource);
 
 		this.program = program;
 
 		this.ctx.useProgram(this.program);
-
-		this.matrixLocation = this.ctx.getUniformLocation(this.program, "u_matrix");
-		this.textureLocation = this.ctx.getUniformLocation(this.program, "u_image");
-		this.textureMatrixLocation = this.ctx.getUniformLocation(
-			this.program,
-			"u_textureMatrix"
-		);
 
 		this.texCoordLocation = this.ctx.getAttribLocation(program, "a_texCoord");
 		this.positionLocation = this.ctx.getAttribLocation(program, "a_position");
@@ -69,45 +63,32 @@ export class C {
 				this.ctx.ARRAY_BUFFER,
 				// prettier-ignore
 				new Float32Array([
-				0, 0,
-				0, 1,
-				1, 0,
-				1, 0,
-				0, 1,
-				1, 1,
-			]),
+					0, 0,
+					0, 1,
+					1, 0,
+					1, 0,
+					0, 1,
+					1, 1,
+				]),
 				this.ctx.STATIC_DRAW
 			);
+
+		const fillAttribPointer = loc =>
+			this.ctx.vertexAttribPointer(loc, 2, this.ctx.FLOAT, false, 0, 0);
 
 		this.texCoordBuffer = this.ctx.createBuffer();
 		this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.texCoordBuffer);
 		fillBuffer();
 
+		this.ctx.enableVertexAttribArray(this.texCoordLocation);
+		fillAttribPointer(this.texCoordLocation);
+
 		this.positionBuffer = this.ctx.createBuffer();
 		this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.positionBuffer);
 		fillBuffer();
 
-		this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.positionBuffer);
 		this.ctx.enableVertexAttribArray(this.positionLocation);
-		this.ctx.vertexAttribPointer(
-			this.positionLocation,
-			2,
-			this.ctx.FLOAT,
-			false,
-			0,
-			0
-		);
-
-		this.ctx.bindBuffer(this.ctx.ARRAY_BUFFER, this.texCoordBuffer);
-		this.ctx.enableVertexAttribArray(this.texCoordLocation);
-		this.ctx.vertexAttribPointer(
-			this.texCoordLocation,
-			2,
-			this.ctx.FLOAT,
-			false,
-			0,
-			0
-		);
+		fillAttribPointer(this.positionLocation);
 	}
 
 	/**
@@ -139,7 +120,6 @@ export class C {
 		);
 
 		if (image) {
-			// Upload the image into the texture.
 			this.ctx.texImage2D(
 				this.ctx.TEXTURE_2D,
 				0,
@@ -148,25 +128,47 @@ export class C {
 				this.ctx.UNSIGNED_BYTE,
 				image
 			);
-		} else {
-			this.ctx.texImage2D(
-				this.ctx.TEXTURE_2D,
-				0,
-				this.ctx.RGBA,
-				this.ctx.canvas.width,
-				this.ctx.canvas.height,
-				0,
-				this.ctx.RGBA,
-				this.ctx.UNSIGNED_BYTE,
-				null
-			);
 		}
 
 		return texture;
 	}
 
-	clear() {
-		this.ctx.viewport(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+	createFramebufferAndTexture(
+		width = this.ctx.canvas.width,
+		height = this.ctx.canvas.height
+	) {
+		const fbtext = this.createTexture();
+		this.ctx.texImage2D(
+			this.ctx.TEXTURE_2D,
+			0,
+			this.ctx.RGBA,
+			width,
+			height,
+			0,
+			this.ctx.RGBA,
+			this.ctx.UNSIGNED_BYTE,
+			null
+		);
+		const fb = this.ctx.createFramebuffer();
+		this.setFramebuffer(fb);
+		this.ctx.framebufferTexture2D(
+			this.ctx.FRAMEBUFFER,
+			this.ctx.COLOR_ATTACHMENT0,
+			this.ctx.TEXTURE_2D,
+			fbtext,
+			0
+		);
+		if (
+			this.ctx.checkFramebufferStatus(this.ctx.FRAMEBUFFER) !==
+			this.ctx.FRAMEBUFFER_COMPLETE
+		) {
+			throw new Error("Output framebuffer not complete");
+		}
+		return [fb, fbtext];
+	}
+
+	clear(width = this.ctx.canvas.width, height = this.ctx.canvas.height) {
+		this.ctx.viewport(0, 0, width, height);
 		this.ctx.clearColor(0, 0, 0, 0);
 		this.ctx.clear(this.ctx.COLOR_BUFFER_BIT);
 	}
@@ -174,9 +176,75 @@ export class C {
 	/**
 	 * @param {WebGLFramebuffer} framebuffer
 	 */
-	setFramebuffer(framebuffer) {
+	setFramebuffer(
+		framebuffer,
+		width = this.ctx.canvas.width,
+		height = this.ctx.canvas.height
+	) {
 		this.ctx.bindFramebuffer(this.ctx.FRAMEBUFFER, framebuffer);
-		this.ctx.viewport(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+		this.ctx.viewport(0, 0, width, height);
+	}
+
+	/**
+	 * @param {WebGLTexture} texture
+	 * @param {Number} width
+	 * @param {Number} height
+	 * @param {array} effects
+	 */
+	applyEffects(texture, width, height, effects = []) {
+		if (effects.length < 1) return texture;
+
+		this.setProgram(programs.effects);
+
+		const getKernelWeight = kernel => {
+			const weight = kernel.reduce((c, x) => c + x);
+			return weight <= 0 ? 1 : weight;
+		};
+
+		const guf = pointer => {
+			const loc = this.ctx.getUniformLocation(this.program, pointer);
+			if (loc === null) throw new Error(`unable to set Location "${pointer}"`);
+			return loc;
+		};
+
+		const matrixLocation = guf("u_matrix");
+		const textureLocation = guf("u_texture");
+		const textureSizeLocation = guf("u_textureSize");
+		const textureMatrixLocation = guf("u_textureMatrix");
+		const kernelLocation = guf("u_kernel[0]");
+		const kernelWeightLocation = guf("u_kernelWeight");
+
+		this.ctx.uniform1i(textureLocation, 0);
+		this.ctx.uniform2f(textureSizeLocation, width, height);
+
+		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture);
+
+		let matrix = pipe(twgl.m4.ortho(0, width, 0, height, -1, 1), matrix =>
+			twgl.m4.scale(matrix, [width, height, 1])
+		);
+
+		this.ctx.uniformMatrix4fv(matrixLocation, false, matrix);
+
+		const texMatrix = twgl.m4.translation([0, 0, 0]);
+
+		this.ctx.uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
+
+		const fb = [
+			this.createFramebufferAndTexture(width, height),
+			this.createFramebufferAndTexture(width, height),
+		];
+
+		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture);
+
+		for (let [index, effect] of Gen.fromArray(effects).enumerate()) {
+			this.setFramebuffer(fb[index % 2][0], width, height);
+
+			this.ctx.uniform1fv(kernelLocation, effect);
+			this.ctx.uniform1f(kernelWeightLocation, getKernelWeight(effect));
+			this.ctx.drawArrays(this.ctx.TRIANGLES, 0, 6);
+			this.ctx.bindTexture(this.ctx.TEXTURE_2D, fb[index % 2][1]);
+			if (index === effects.length - 1) return fb[index % 2][1];
+		}
 	}
 
 	/**
@@ -204,14 +272,24 @@ export class C {
 		if (!srcWidth) srcWidth = textureWidth;
 		if (!srcHeight) srcHeight = textureHeight;
 
-		if (this.programSource !== programs.draw) {
-			this.setProgram(programs.draw);
-		}
+		this.setProgram(programs.draw);
+
+		const guf = pointer => {
+			const loc = this.ctx.getUniformLocation(this.program, pointer);
+			if (loc === null) throw new Error("unable to set Location");
+			return loc;
+		};
+
+		const matrixLocation = guf("u_matrix");
+		const textureLocation = guf("u_texture");
+		const textureMatrixLocation = guf("u_textureMatrix");
+
+		this.ctx.uniform1i(textureLocation, 0);
 
 		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture);
 
 		let matrix = pipe(
-			twgl.m4.ortho(0, this.ctx.canvas.width, this.ctx.canvas.height, 0, -1, 1),
+			twgl.m4.ortho(0, dstWidth, dstHeight, 0, -1, 1),
 			matrix => twgl.m4.translate(matrix, [dstX, dstY, 0]),
 			matrix => twgl.m4.scale(matrix, [srcWidth * scale, srcHeight * scale, 1])
 		);
@@ -224,8 +302,7 @@ export class C {
 			);
 		}
 
-		this.ctx.uniformMatrix4fv(this.matrixLocation, false, matrix);
-		this.ctx.uniform1i(this.textureLocation, 0);
+		this.ctx.uniformMatrix4fv(matrixLocation, false, matrix);
 
 		const texMatrix = pipe(
 			twgl.m4.translation([srcX / textureWidth, srcY / textureHeight, 0]),
@@ -240,7 +317,7 @@ export class C {
 			}
 		);
 
-		this.ctx.uniformMatrix4fv(this.textureMatrixLocation, false, texMatrix);
+		this.ctx.uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
 
 		this.ctx.drawArrays(this.ctx.TRIANGLES, 0, 6);
 	}
@@ -291,35 +368,20 @@ export class C {
 			srcWidth: srcWidth = image.width,
 			srcHeight: srcHeight = image.height,
 			scale: scale = 1,
+			dstHeight: dstHeight = this.ctx.canvas.height,
+			dstWidth: dstWidth = this.ctx.canvas.width,
+			effects: effects = [],
 		} = {}
 	) {
 		if (!srcWidth) srcWidth = image.width;
 		if (!srcHeight) srcHeight = image.height;
-		const cwidth = this.ctx.canvas.width;
-		const cheight = this.ctx.canvas.height;
 
-		const rows = Math.ceil(cheight / srcHeight / scale);
-		const columns = Math.ceil(cwidth / srcWidth / scale);
+		const rows = Math.ceil(dstHeight / srcHeight / scale);
+		const columns = Math.ceil(dstWidth / srcWidth / scale);
 
 		const texture = this.createTexture(image);
 
-		const fb = this.ctx.createFramebuffer();
-		this.setFramebuffer(fb);
-		const fbtext = this.createTexture();
-		this.ctx.framebufferTexture2D(
-			this.ctx.FRAMEBUFFER,
-			this.ctx.COLOR_ATTACHMENT0,
-			this.ctx.TEXTURE_2D,
-			fbtext,
-			0
-		);
-
-		if (
-			this.ctx.checkFramebufferStatus(this.ctx.FRAMEBUFFER) !==
-			this.ctx.FRAMEBUFFER_COMPLETE
-		) {
-			throw new Error("Output framebuffer not complete");
-		}
+		let [fb, fbtext] = this.createFramebufferAndTexture();
 
 		for (let row of Gen.range(rows).map(x => x * srcHeight * scale)) {
 			for (let col of Gen.range(columns).map(x => x * srcWidth * scale)) {
@@ -330,6 +392,8 @@ export class C {
 					srcHeight: srcHeight,
 					dstX: col,
 					dstY: row,
+					dstWidth,
+					dstHeight,
 					scale,
 					flipY: randomInt(0, 1) ? true : false,
 				});
@@ -337,10 +401,20 @@ export class C {
 			await sleep(0);
 		}
 
+		if (effects.length > 0) {
+			fbtext = this.applyEffects(fbtext, dstWidth, dstHeight, effects);
+		}
+
+		return fbtext;
+	}
+
+	render(texture, width, height, flipY = false) {
 		this.setFramebuffer(null);
-		this.drawTexture(fbtext, cwidth, cheight, {
-			dstWidth: cwidth,
-			dstHeight: cheight,
+		this.drawTexture(texture, this.ctx.canvas.width, this.ctx.canvas.height, {
+			dstWidth: this.ctx.canvas.width,
+			dstHeight: this.ctx.canvas.height,
+			srcWidth: width,
+			srcHeight: height,
 			flipY: true,
 		});
 	}

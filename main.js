@@ -1,5 +1,6 @@
 import * as tools from "./jslib/tools.js";
 import { C } from "./jslib/ctools.js";
+import * as filters from "./jslib/filters.js";
 
 function getImages() {
 	return fetch("./api/list.php").then(req => req.json());
@@ -42,6 +43,8 @@ async function main() {
 	const txinput = document.querySelector(".txinput");
 	const tyinput = document.querySelector(".tyinput");
 	const sel = document.querySelector(".src");
+	const appliedFilters = document.querySelector(".applied-filters");
+	const filterStack = document.querySelector(".filter-stack");
 	const actionSel = document.querySelector(".action");
 	const genb = document.querySelector(".genb");
 	const difb = document.querySelector(".difb");
@@ -69,6 +72,22 @@ async function main() {
 		sel.appendChild(opt);
 	});
 
+	Object.keys(filters).forEach(filter => {
+		const opt = document.createElement("div");
+		opt.classList.add("filter-item");
+		opt.innerText = filter;
+		opt.addEventListener("click", e => {
+			const el = document.createElement("div");
+			el.innerText = opt.innerText;
+			el.classList.add("filter-item");
+			el.addEventListener("click", e => {
+				appliedFilters.removeChild(el);
+			});
+			appliedFilters.appendChild(el);
+		});
+		filterStack.appendChild(opt);
+	});
+
 	genb.addEventListener("click", async e => {
 		canvas.width = parseInt(winput.value, 10) || window.innerWidth;
 		canvas.height = parseInt(hinput.value, 10) || window.innerHeight;
@@ -76,17 +95,23 @@ async function main() {
 		c.clear();
 		switch (actionSel.options[actionSel.selectedIndex].text) {
 			case "Tile":
-				c.tile(image, {
+				const tile = await c.tile(image, {
 					scale: 1 / (parseInt(zinput.value, 10) || 1),
 					srcWidth: parseInt(txinput.value, 10),
 					srcHeight: parseInt(tyinput.value, 10),
+					effects: Array.from(appliedFilters.childNodes)
+						.map(x => x.innerText)
+						.map(x => filters[x]),
 				});
+				c.render(tile, canvas.width, canvas.height, true);
+				break;
 			case "Image":
 				c.drawImage(image, {
 					scale: 1 / (parseInt(zinput.value, 10) || 1),
 					srcWidth: parseInt(txinput.value, 10),
 					srcHeight: parseInt(tyinput.value, 10),
 				});
+				break;
 		}
 	});
 
