@@ -49,7 +49,7 @@ export class C {
 	setProgram(programSource) {
 		if (this.programSource === programSource) return;
 		this.programSource = programSource;
-		const program = this.getProgram(...this.programSource);
+		const program = this.getProgram(...this.programSource.split("//SPLIT"));
 
 		this.program = program;
 
