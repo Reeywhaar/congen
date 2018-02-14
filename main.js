@@ -112,8 +112,10 @@ async function main() {
 			max
 		);
 		const image = await readImage(sel.options[sel.selectedIndex].text);
-		const tileX = Math.min(parseInt(txinput.value, 10), image.width);
-		const tileY = Math.min(parseInt(tyinput.value, 10), image.width);
+		const tileX =
+			Math.min(parseInt(txinput.value, 10), image.width) || canvas.width / 8;
+		const tileY =
+			Math.min(parseInt(tyinput.value, 10), image.width) || canvas.width / 8;
 		const distribution = parseInt(distributionInput.value, 10);
 		const scale = 1 / (parseFloat(zinput.value, 10) || 1);
 		c.clear();
