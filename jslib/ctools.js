@@ -1,5 +1,6 @@
 import { pipe, gmap, randomInt, range, sleep } from "./tools.js";
 import Gen from "../node_modules/@reeywhaar/iterator/iterator.es6.js";
+import Texture from "./texture.js";
 import * as filters from "./filters.js";
 import * as programs from "./programs.js";
 
@@ -12,6 +13,10 @@ export class C {
 		this.ctx = ctx;
 	}
 
+	/**
+	 *
+	 * @return {WebGLShader}
+	 */
 	getShader(type, source) {
 		const shader = this.ctx.createShader(type);
 		this.ctx.shaderSource(shader, source);
@@ -27,9 +32,19 @@ export class C {
 		return shader;
 	}
 
-	getProgram(vsSource, fsSource) {
-		const vertexShader = this.getShader(this.ctx.VERTEX_SHADER, vsSource);
-		const fragmentShader = this.getShader(this.ctx.FRAGMENT_SHADER, fsSource);
+	/**
+	 *
+	 * @return {WebGLProgram}
+	 */
+	getProgram(vertextShaderSource, fragmentShaderSource) {
+		const vertexShader = this.getShader(
+			this.ctx.VERTEX_SHADER,
+			vertextShaderSource
+		);
+		const fragmentShader = this.getShader(
+			this.ctx.FRAGMENT_SHADER,
+			fragmentShaderSource
+		);
 
 		const shaderProgram = this.ctx.createProgram();
 		this.ctx.attachShader(shaderProgram, vertexShader);
@@ -93,6 +108,7 @@ export class C {
 
 	/**
 	 * @param {HTMLImageElement} image
+	 * @return Texture
 	 */
 	createTexture(image) {
 		const texture = this.ctx.createTexture();
@@ -128,11 +144,17 @@ export class C {
 				this.ctx.UNSIGNED_BYTE,
 				image
 			);
+		} else {
+			return new Texture(texture, null, null);
 		}
 
-		return texture;
+		return new Texture(texture, image.width, image.height);
 	}
 
+	/**
+	 * @param {HTMLImageElement} image
+	 * @return [WebGLFramebuffer, Texture]
+	 */
 	createFramebufferAndTexture(
 		width = this.ctx.canvas.width,
 		height = this.ctx.canvas.height
@@ -155,7 +177,7 @@ export class C {
 			this.ctx.FRAMEBUFFER,
 			this.ctx.COLOR_ATTACHMENT0,
 			this.ctx.TEXTURE_2D,
-			fbtext,
+			fbtext.texture,
 			0
 		);
 		if (
@@ -164,7 +186,7 @@ export class C {
 		) {
 			throw new Error("Output framebuffer not complete");
 		}
-		return [fb, fbtext];
+		return [fb, new Texture(fbtext.texture, width, height)];
 	}
 
 	clear(width = this.ctx.canvas.width, height = this.ctx.canvas.height) {
@@ -186,12 +208,11 @@ export class C {
 	}
 
 	/**
-	 * @param {WebGLTexture} texture
-	 * @param {Number} width
-	 * @param {Number} height
+	 * @param {Texture} texture
 	 * @param {array} effects
+	 * @returns Texture
 	 */
-	applyEffects(texture, width, height, effects = []) {
+	applyEffects(texture, effects = []) {
 		if (effects.length < 1) return texture;
 
 		this.setProgram(programs.effects);
@@ -215,10 +236,11 @@ export class C {
 		const kernelWeightLocation = guf("u_kernelWeight");
 
 		this.ctx.uniform1i(textureLocation, 0);
-		this.ctx.uniform2f(textureSizeLocation, width, height);
+		this.ctx.uniform2f(textureSizeLocation, texture.width, texture.height);
 
-		let matrix = pipe(twgl.m4.ortho(0, width, 0, height, -1, 1), matrix =>
-			twgl.m4.scale(matrix, [width, height, 1])
+		let matrix = pipe(
+			twgl.m4.ortho(0, texture.width, 0, texture.height, -1, 1),
+			matrix => twgl.m4.scale(matrix, [texture.width, texture.height, 1])
 		);
 
 		this.ctx.uniformMatrix4fv(matrixLocation, false, matrix);
@@ -228,35 +250,38 @@ export class C {
 		this.ctx.uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
 
 		const fb = [
-			this.createFramebufferAndTexture(width, height),
-			this.createFramebufferAndTexture(width, height),
+			this.createFramebufferAndTexture(texture.width, texture.height),
+			this.createFramebufferAndTexture(texture.width, texture.height),
 		];
 
-		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture);
+		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture.texture);
 
 		for (let [index, effect] of Gen.fromArray(effects).enumerate()) {
-			this.setFramebuffer(fb[index % 2][0], width, height);
+			this.setFramebuffer(fb[index % 2][0], texture.width, texture.height);
 
 			this.ctx.uniform1fv(kernelLocation, effect);
 			this.ctx.uniform1f(kernelWeightLocation, getKernelWeight(effect));
 			this.ctx.drawArrays(this.ctx.TRIANGLES, 0, 6);
-			this.ctx.bindTexture(this.ctx.TEXTURE_2D, fb[index % 2][1]);
-			if (index === effects.length - 1) return fb[index % 2][1];
+			this.ctx.bindTexture(this.ctx.TEXTURE_2D, fb[index % 2][1].texture);
+			if (index === effects.length - 1)
+				return new Texture(
+					fb[index % 2][1].texture,
+					texture.width,
+					texture.height
+				);
 		}
 	}
 
 	/**
-	 * @param {WebGLTexture} texture
+	 * @param {Texture} texture
 	 */
 	drawTexture(
 		texture,
-		textureWidth,
-		textureHeight,
 		{
 			srcX: srcX = 0,
 			srcY: srcY = 0,
-			srcWidth: srcWidth = textureWidth,
-			srcHeight: srcHeight = textureHeight,
+			srcWidth: srcWidth = texture.width,
+			srcHeight: srcHeight = texture.height,
 			dstX: dstX = 0,
 			dstY: dstY = 0,
 			dstWidth: dstWidth = this.ctx.canvas.width,
@@ -266,10 +291,10 @@ export class C {
 			flipX: flipX = false,
 		} = {}
 	) {
-		if (!textureWidth) throw new Error("textureWidth required");
-		if (!textureHeight) throw new Error("textureHeight required");
-		if (!srcWidth) srcWidth = textureWidth;
-		if (!srcHeight) srcHeight = textureHeight;
+		if (!texture.width) throw new Error("textureWidth required");
+		if (!texture.height) throw new Error("textureHeight required");
+		if (!srcWidth) srcWidth = texture.width;
+		if (!srcHeight) srcHeight = texture.height;
 
 		this.setProgram(programs.draw);
 
@@ -310,13 +335,13 @@ export class C {
 		this.ctx.uniformMatrix4fv(matrixLocation, false, matrix);
 
 		const texMatrix = pipe(
-			twgl.m4.translation([srcX / textureWidth, srcY / textureHeight, 0]),
+			twgl.m4.translation([srcX / texture.width, srcY / texture.height, 0]),
 			matrix => {
-				if (srcWidth === textureWidth && srcHeight === textureHeight)
+				if (srcWidth === texture.width && srcHeight === texture.height)
 					return matrix;
 				return twgl.m4.scale(matrix, [
-					srcWidth / textureWidth,
-					srcHeight / textureHeight,
+					srcWidth / texture.width,
+					srcHeight / texture.height,
 					1,
 				]);
 			}
@@ -324,7 +349,7 @@ export class C {
 
 		this.ctx.uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
 
-		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture);
+		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture.texture);
 		this.ctx.drawArrays(this.ctx.TRIANGLES, 0, 6);
 	}
 
@@ -349,7 +374,7 @@ export class C {
 		if (!srcWidth) srcWidth = image.width;
 		if (!srcHeight) srcHeight = image.height;
 		const texture = this.createTexture(image);
-		this.drawTexture(texture, image.width, image.height, {
+		this.drawTexture(texture, {
 			srcX,
 			srcY,
 			srcWidth,
@@ -365,32 +390,31 @@ export class C {
 
 	/**
 	 * @param {HTMLImageElement} image
+	 * @returns Texture
 	 */
 	async tile(
-		image,
+		texture,
 		{
-			srcWidth: srcWidth = image.width,
-			srcHeight: srcHeight = image.height,
+			srcWidth: srcWidth = texture.width,
+			srcHeight: srcHeight = texture.height,
 			scale: scale = 1,
 			dstHeight: dstHeight = this.ctx.canvas.height,
 			dstWidth: dstWidth = this.ctx.canvas.width,
 		} = {}
 	) {
-		if (!srcWidth) srcWidth = image.width;
-		if (!srcHeight) srcHeight = image.height;
+		if (!srcWidth) srcWidth = texture.width;
+		if (!srcHeight) srcHeight = texture.height;
 
 		const rows = Math.ceil(dstHeight / srcHeight / scale);
 		const columns = Math.ceil(dstWidth / srcWidth / scale);
-
-		const texture = this.createTexture(image);
 
 		let [fb, fbtext] = this.createFramebufferAndTexture(dstWidth, dstHeight);
 
 		for (let row of Gen.range(rows).map(x => x * srcHeight * scale)) {
 			for (let col of Gen.range(columns).map(x => x * srcWidth * scale)) {
-				this.drawTexture(texture, image.width, image.height, {
-					srcX: randomInt(0, image.width - srcWidth),
-					srcY: randomInt(0, image.height - srcHeight),
+				this.drawTexture(texture, {
+					srcX: randomInt(0, texture.width - srcWidth),
+					srcY: randomInt(0, texture.height - srcHeight),
 					srcWidth: srcWidth,
 					srcHeight: srcHeight,
 					dstX: col,
@@ -409,13 +433,13 @@ export class C {
 	}
 
 	/**
-	 * @param {WebGLTexture} texture
+	 * @param {Texture} texture
 	 * @param {Number} width
 	 * @param {Number} height
 	 *
-	 * @returns WebGLTexture
+	 * @returns Texture
 	 */
-	diffuse(texture, width, height, distribution = 120) {
+	diffuse(texture, distribution = 120) {
 		this.setProgram(programs.diffuse);
 
 		const guf = pointer => {
@@ -444,36 +468,40 @@ export class C {
 				.toArray()
 		);
 
-		this.ctx.uniform2f(textureSizeLocation, width, height);
+		this.ctx.uniform2f(textureSizeLocation, texture.width, texture.height);
 
 		this.ctx.uniform1i(textureLocation, 0);
 
-		let matrix = pipe(twgl.m4.ortho(0, width, 0, height, -1, 1), matrix =>
-			twgl.m4.scale(matrix, [width, height, 1])
+		let matrix = pipe(
+			twgl.m4.ortho(0, texture.width, 0, texture.height, -1, 1),
+			matrix => twgl.m4.scale(matrix, [texture.width, texture.height, 1])
 		);
 		this.ctx.uniformMatrix4fv(matrixLocation, false, matrix);
 
 		const texMatrix = twgl.m4.translation([0, 0, 0]);
 		this.ctx.uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
 
-		const [fr, fbtext] = this.createFramebufferAndTexture(width, height);
+		const [fr, fbtext] = this.createFramebufferAndTexture(
+			texture.width,
+			texture.height
+		);
 
-		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture);
+		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture.texture);
 
-		this.setFramebuffer(fr, width, height);
+		this.setFramebuffer(fr, texture.width, texture.height);
 
 		this.ctx.drawArrays(this.ctx.TRIANGLES, 0, 6);
 
 		return fbtext;
 	}
 
-	render(texture, width, height, flipY = false) {
+	render(texture, flipY = false) {
 		this.setFramebuffer(null);
-		this.drawTexture(texture, this.ctx.canvas.width, this.ctx.canvas.height, {
+		this.drawTexture(texture, {
 			dstWidth: this.ctx.canvas.width,
 			dstHeight: this.ctx.canvas.height,
-			srcWidth: width,
-			srcHeight: height,
+			srcWidth: texture.width,
+			srcHeight: texture.height,
 			flipY: true,
 		});
 	}

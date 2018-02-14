@@ -118,8 +118,12 @@ async function main() {
 			Math.min(parseInt(tyinput.value, 10), image.width) || canvas.width / 8;
 		const distribution = parseInt(distributionInput.value, 10);
 		const scale = 1 / (parseFloat(zinput.value, 10) || 1);
+		const appliedEffects = Array.from(appliedFilters.childNodes)
+			.map(x => x.innerText)
+			.map(x => filters[x]);
 		c.clear();
-		let texture = await c.tile(image, {
+		let texture = c.createTexture(image);
+		texture = await c.tile(texture, {
 			scale: scale,
 			srcWidth: tileX,
 			srcHeight: tileY,
@@ -127,17 +131,10 @@ async function main() {
 			dstHeight: canvas.height,
 		});
 		if (distribution > 0) {
-			texture = c.diffuse(texture, canvas.width, canvas.height, distribution);
+			texture = c.diffuse(texture, distribution);
 		}
-		if (effects.length > 0) {
-			texture = c.applyEffects(
-				texture,
-				canvas.width,
-				canvas.height,
-				Array.from(appliedFilters.childNodes)
-					.map(x => x.innerText)
-					.map(x => filters[x])
-			);
+		if (appliedEffects.length > 0) {
+			texture = c.applyEffects(texture, appliedEffects);
 		}
 		c.render(texture);
 	});
