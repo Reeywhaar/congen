@@ -29,7 +29,7 @@
 		.controls__row{
 			padding: 2px;
 			display: grid;
-			grid-template-columns: repeat(2, minmax(min-content, 140px));
+			grid-template-columns: repeat(2, minmax(min-content, 150px));
 			grid-column-gap: 5px;
 			justify-content: end;
 		}
@@ -78,11 +78,8 @@
 			<div class="filter-stack"></div>
 		</div>
 		<div class="controls__row">
-			<select class="action">
-				<option selected>Tile</option>
-				<option>Image</option>
-			</select>
-			<button class="genb" >Generate</button>
+			<input type="number" class="distributioninput" value="120" min="0" placeholder="distribution">
+			<button class="genb">Generate</button>
 		</div>
 	</div>
 </body>

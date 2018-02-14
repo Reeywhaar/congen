@@ -1,6 +1,7 @@
 import * as tools from "./jslib/tools.js";
 import { C } from "./jslib/ctools.js";
 import * as filters from "./jslib/filters.js";
+import { effects } from "./jslib/programs.js";
 
 function getImages() {
 	return fetch("./api/list.php").then(req => req.json());
@@ -30,6 +31,8 @@ function getShader(name) {
 
 async function main() {
 	const canvas = document.querySelector("canvas");
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
 	const c = new C(
 		canvas.getContext("webgl", {
 			// preserveDrawingBuffer: true,
@@ -45,14 +48,14 @@ async function main() {
 	const sel = document.querySelector(".src");
 	const appliedFilters = document.querySelector(".applied-filters");
 	const filterStack = document.querySelector(".filter-stack");
-	const actionSel = document.querySelector(".action");
+	const distributionInput = document.querySelector(".distributioninput");
 	const genb = document.querySelector(".genb");
 	const difb = document.querySelector(".difb");
 	const fire = tools.debounce(() => {
 		genb.click();
 	}, 500);
 
-	[winput, hinput, zinput, txinput, tyinput].forEach(e => {
+	[winput, hinput, zinput, txinput, tyinput, distributionInput].forEach(e => {
 		e.addEventListener("keydown", e => {
 			if (e.which === 71) e.preventDefault();
 			if (e.which === 13) {
@@ -92,27 +95,32 @@ async function main() {
 		canvas.width = parseInt(winput.value, 10) || window.innerWidth;
 		canvas.height = parseInt(hinput.value, 10) || window.innerHeight;
 		const image = await readImage(sel.options[sel.selectedIndex].text);
+		const tileX = parseInt(txinput.value, 10);
+		const tileY = parseInt(tyinput.value, 10);
+		const distribution = parseInt(distributionInput.value, 10);
+		const scale = 1 / parseFloat(zinput.value, 10) || 1;
 		c.clear();
-		switch (actionSel.options[actionSel.selectedIndex].text) {
-			case "Tile":
-				const tile = await c.tile(image, {
-					scale: 1 / (parseInt(zinput.value, 10) || 1),
-					srcWidth: parseInt(txinput.value, 10),
-					srcHeight: parseInt(tyinput.value, 10),
-					effects: Array.from(appliedFilters.childNodes)
-						.map(x => x.innerText)
-						.map(x => filters[x]),
-				});
-				c.render(tile, canvas.width, canvas.height, true);
-				break;
-			case "Image":
-				c.drawImage(image, {
-					scale: 1 / (parseInt(zinput.value, 10) || 1),
-					srcWidth: parseInt(txinput.value, 10),
-					srcHeight: parseInt(tyinput.value, 10),
-				});
-				break;
+		let texture = await c.tile(image, {
+			scale: scale,
+			srcWidth: tileX,
+			srcHeight: tileY,
+			dstWidth: canvas.width,
+			dstHeight: canvas.height,
+		});
+		if (distribution > 0) {
+			texture = c.diffuse(texture, canvas.width, canvas.height, distribution);
 		}
+		if (effects.length > 0) {
+			texture = c.applyEffects(
+				texture,
+				canvas.width,
+				canvas.height,
+				Array.from(appliedFilters.childNodes)
+					.map(x => x.innerText)
+					.map(x => filters[x])
+			);
+		}
+		c.render(texture);
 	});
 
 	document.body.addEventListener("dragover", e => {

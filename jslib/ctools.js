@@ -217,8 +217,6 @@ export class C {
 		this.ctx.uniform1i(textureLocation, 0);
 		this.ctx.uniform2f(textureSizeLocation, width, height);
 
-		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture);
-
 		let matrix = pipe(twgl.m4.ortho(0, width, 0, height, -1, 1), matrix =>
 			twgl.m4.scale(matrix, [width, height, 1])
 		);
@@ -257,14 +255,15 @@ export class C {
 		{
 			srcX: srcX = 0,
 			srcY: srcY = 0,
-			srcWidth: srcWidth,
-			srcHeight: srcHeight,
+			srcWidth: srcWidth = textureWidth,
+			srcHeight: srcHeight = textureHeight,
 			dstX: dstX = 0,
 			dstY: dstY = 0,
 			dstWidth: dstWidth = this.ctx.canvas.width,
 			dstHeight: dstHeight = this.ctx.canvas.height,
 			scale: scale = 1,
 			flipY: flipY = false,
+			flipX: flipX = false,
 		} = {}
 	) {
 		if (!textureWidth) throw new Error("textureWidth required");
@@ -286,8 +285,6 @@ export class C {
 
 		this.ctx.uniform1i(textureLocation, 0);
 
-		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture);
-
 		let matrix = pipe(
 			twgl.m4.ortho(0, dstWidth, dstHeight, 0, -1, 1),
 			matrix => twgl.m4.translate(matrix, [dstX, dstY, 0]),
@@ -299,6 +296,14 @@ export class C {
 				matrix,
 				matrix => twgl.m4.scale(matrix, [1, -1, 1]),
 				matrix => twgl.m4.translate(matrix, [0, -1, 0])
+			);
+		}
+
+		if (flipX) {
+			matrix = pipe(
+				matrix,
+				matrix => twgl.m4.scale(matrix, [-1, 1, 1]),
+				matrix => twgl.m4.translate(matrix, [-1, 0, 0])
 			);
 		}
 
@@ -319,6 +324,7 @@ export class C {
 
 		this.ctx.uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
 
+		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture);
 		this.ctx.drawArrays(this.ctx.TRIANGLES, 0, 6);
 	}
 
@@ -363,14 +369,11 @@ export class C {
 	async tile(
 		image,
 		{
-			srcX: srcX = 0,
-			srcY: srcY = 0,
 			srcWidth: srcWidth = image.width,
 			srcHeight: srcHeight = image.height,
 			scale: scale = 1,
 			dstHeight: dstHeight = this.ctx.canvas.height,
 			dstWidth: dstWidth = this.ctx.canvas.width,
-			effects: effects = [],
 		} = {}
 	) {
 		if (!srcWidth) srcWidth = image.width;
@@ -381,7 +384,7 @@ export class C {
 
 		const texture = this.createTexture(image);
 
-		let [fb, fbtext] = this.createFramebufferAndTexture();
+		let [fb, fbtext] = this.createFramebufferAndTexture(dstWidth, dstHeight);
 
 		for (let row of Gen.range(rows).map(x => x * srcHeight * scale)) {
 			for (let col of Gen.range(columns).map(x => x * srcWidth * scale)) {
@@ -396,14 +399,68 @@ export class C {
 					dstHeight,
 					scale,
 					flipY: randomInt(0, 1) ? true : false,
+					flipX: randomInt(0, 1) ? true : false,
 				});
 			}
 			await sleep(0);
 		}
 
-		if (effects.length > 0) {
-			fbtext = this.applyEffects(fbtext, dstWidth, dstHeight, effects);
-		}
+		return fbtext;
+	}
+
+	/**
+	 * @param {WebGLTexture} texture
+	 * @param {Number} width
+	 * @param {Number} height
+	 *
+	 * @returns WebGLTexture
+	 */
+	diffuse(texture, width, height, distribution = 120) {
+		this.setProgram(programs.diffuse);
+
+		const guf = pointer => {
+			const loc = this.ctx.getUniformLocation(this.program, pointer);
+			if (loc === null) throw new Error(`unable to set Location ${pointer}`);
+			return loc;
+		};
+
+		const matrixLocation = guf("u_matrix");
+		const textureLocation = guf("u_texture");
+		const textureMatrixLocation = guf("u_textureMatrix");
+		const textureSizeLocation = guf("u_textureSize");
+		const distributionSizeLocation = guf("u_distributionSize");
+		const distributionLocation = guf("u_distribution");
+
+		this.ctx.uniform1f(distributionSizeLocation, distribution);
+		this.ctx.uniform1fv(
+			distributionLocation,
+			Gen.range(8)
+				.subSplit(function*(i) {
+					yield randomInt(distribution / 4, distribution / 2);
+					yield randomInt(distribution * 0.5, distribution);
+				})
+				.toArray()
+		);
+
+		this.ctx.uniform2f(textureSizeLocation, width, height);
+
+		this.ctx.uniform1i(textureLocation, 0);
+
+		let matrix = pipe(twgl.m4.ortho(0, width, 0, height, -1, 1), matrix =>
+			twgl.m4.scale(matrix, [width, height, 1])
+		);
+		this.ctx.uniformMatrix4fv(matrixLocation, false, matrix);
+
+		const texMatrix = twgl.m4.translation([0, 0, 0]);
+		this.ctx.uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
+
+		const [fr, fbtext] = this.createFramebufferAndTexture(width, height);
+
+		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture);
+
+		this.setFramebuffer(fr, width, height);
+
+		this.ctx.drawArrays(this.ctx.TRIANGLES, 0, 6);
 
 		return fbtext;
 	}
