@@ -98,31 +98,30 @@ export const diffuse = `
 		vec2 point = v_texCoord * u_textureSize;
 		vec4 color = texture2D(u_texture, v_texCoord);
 
-		float mul = 2.0;
-		color += color;
+		float mul = 1.0;
 		if(point.x <= u_textureSize.x - u_distributionSize && point.y >= u_distributionSize){
 			mul += 2.0;
 			color +=
-				texture2D(u_texture, v_texCoord + vec2( u_distribution[0],  u_distribution[1]) * onePixel) +
-				texture2D(u_texture, v_texCoord + vec2( u_distribution[2],  u_distribution[3]) * onePixel);
+				texture2D(u_texture, v_texCoord + vec2( u_distribution[0],  -u_distribution[1]) * onePixel) +
+				texture2D(u_texture, v_texCoord + vec2( u_distribution[2],  -u_distribution[3]) * onePixel);
 		}
 		if(point.x <= u_textureSize.x - u_distributionSize && point.y <= u_textureSize.y - u_distributionSize){
 			mul += 2.0;
 			color +=
-				texture2D(u_texture, v_texCoord + vec2( u_distribution[4],  -u_distribution[5]) * onePixel) +
-				texture2D(u_texture, v_texCoord + vec2( u_distribution[6],  -u_distribution[7]) * onePixel);
+				texture2D(u_texture, v_texCoord + vec2( u_distribution[4],  u_distribution[5]) * onePixel) +
+				texture2D(u_texture, v_texCoord + vec2( u_distribution[6],  u_distribution[7]) * onePixel);
 		}
 		if(point.x >= u_distributionSize && point.y >= u_distributionSize){
 			mul += 2.0;
 			color +=
-				texture2D(u_texture, v_texCoord + vec2( -u_distribution[8],  -u_distribution[9]) * onePixel) +
-				texture2D(u_texture, v_texCoord + vec2( -u_distribution[10],  -u_distribution[11]) * onePixel);
+				texture2D(u_texture, v_texCoord + vec2( -u_distribution[8],  u_distribution[9]) * onePixel) +
+				texture2D(u_texture, v_texCoord + vec2( -u_distribution[10], u_distribution[11]) * onePixel);
 		}
 		if(point.x >= u_distributionSize && point.y <= u_textureSize.y - u_distributionSize){
 			mul += 2.0;
 			color +=
-				texture2D(u_texture, v_texCoord + vec2( -u_distribution[12], u_distribution[13]) * onePixel) +
-				texture2D(u_texture, v_texCoord + vec2( -u_distribution[14], u_distribution[15]) * onePixel);
+				texture2D(u_texture, v_texCoord + vec2( -u_distribution[12], -u_distribution[13]) * onePixel) +
+				texture2D(u_texture, v_texCoord + vec2( -u_distribution[14], -u_distribution[15]) * onePixel);
 		}
 		color = color / mul;
 

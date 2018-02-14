@@ -23,21 +23,21 @@ export const gaussianBlur2 = new Float32Array([
 // 	0, 1, 0
 // ]);
 // prettier-ignore
-export const unsharpen = new Float32Array([
+export const sharp1 = new Float32Array([
 	-1, -1, -1,
-	-1,  9, -1,
+	-1, 16, -1,
 	-1, -1, -1
 ]);
 // prettier-ignore
-export const sharpness = new Float32Array([
+export const sharp2 = new Float32Array([
 	 0, -1,  0,
 	-1,  5, -1,
 	 0, -1,  0
 ]);
 // prettier-ignore
-export const sharpen = new Float32Array([
+export const sharp3 = new Float32Array([
 	-1, -1, -1,
-	-1, 16, -1,
+	-1,  9, -1,
 	-1, -1, -1
 ]);
 // prettier-ignore

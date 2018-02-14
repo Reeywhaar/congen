@@ -437,6 +437,8 @@ export class C {
 			Gen.range(8)
 				.subSplit(function*(i) {
 					yield randomInt(distribution / 4, distribution / 2);
+					yield randomInt(distribution / 4, distribution / 2);
+					yield randomInt(distribution * 0.5, distribution);
 					yield randomInt(distribution * 0.5, distribution);
 				})
 				.toArray()
