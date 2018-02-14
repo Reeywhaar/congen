@@ -52,10 +52,13 @@ async function main() {
 	const distributionInput = document.querySelector(".distributioninput");
 	const genb = document.querySelector(".genb");
 	const difb = document.querySelector(".difb");
+	const saturationInput = document.querySelector(".saturationInput");
+	const contrastInput = document.querySelector(".contrastInput");
+	const brightnessInput = document.querySelector(".brightnessInput");
 	const downloadButton = document.querySelector(".downloadb");
 	const fire = tools.debounce(() => {
 		genb.click();
-	}, 500);
+	}, 200);
 
 	downloadButton.addEventListener("click", async () => {
 		const blob = await new Promise((resolve, reject) => {
@@ -145,7 +148,10 @@ async function main() {
 		const tileY =
 			Math.min(parseInt(tyinput.value, 10), image.width) || canvas.width / 8;
 		const distribution = parseInt(distributionInput.value, 10);
-		const scale = 1 / (parseFloat(zinput.value, 10) || 1);
+		const scale = 1 / (parseFloat(zinput.value) || 1);
+		const saturation = parseFloat(saturationInput.value) || 0;
+		const contrast = parseFloat(contrastInput.value) || 0;
+		const brightness = parseFloat(brightnessInput.value) || 0;
 		const appliedEffects = Array.from(appliedFilters.childNodes)
 			.map(x => x.innerText)
 			.map(x => filters[x]);
@@ -159,6 +165,9 @@ async function main() {
 		});
 		if (distribution > 0) {
 			texture = c.diffuse(texture, distribution);
+		}
+		if (saturation || brightness || contrast) {
+			texture = c.adjust(texture, saturation, contrast, brightness);
 		}
 		if (appliedEffects.length > 0) {
 			texture = c.applyEffects(texture, appliedEffects);

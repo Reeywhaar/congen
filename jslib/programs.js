@@ -128,3 +128,70 @@ export const diffuse = `
 		gl_FragColor = color;
 	}
 `;
+export const adjust = `
+	attribute vec4 a_position;
+	attribute vec2 a_texCoord;
+
+	varying vec2 v_texCoord;
+
+	uniform mat4 u_matrix;
+	uniform mat4 u_textureMatrix;
+
+	void main() {
+		v_texCoord = (u_textureMatrix * vec4(a_texCoord, 0, 1)).xy;
+		gl_Position = u_matrix * a_position;
+	}
+
+	//SPLIT
+
+	precision mediump float;
+
+	varying vec2 v_texCoord;
+
+	uniform sampler2D u_texture;
+	uniform float     u_saturation;
+	uniform float     u_contrast;
+	uniform float     u_brightness;
+
+	float pr = 0.299;
+	float pg = 0.587;
+	float pb = 0.114;
+
+	float contrast(float x, float amount){
+		float v = abs((x - 0.5) * 2.0);
+		return (sign((x - 0.5) * 2.0) * (v + ((1.0 - v) * v * amount))) / 2.0 + 0.5;
+	}
+
+	vec4 contrast(vec4 v, float amount){
+		return vec4(
+			contrast(v.r, amount),
+			contrast(v.g, amount),
+			contrast(v.b, amount),
+			v.a
+		);
+	}
+
+	vec4 saturate(vec4 v, float amount){
+		float p = sqrt(
+			v.r * v.r * pr +
+			v.g * v.g * pg +
+			v.b * v.b * pb
+		);
+
+		return vec4(
+			p + (v.r - p) * amount,
+			p + (v.g - p) * amount,
+			p + (v.b - p) * amount,
+			1
+		);
+	}
+
+	void main() {
+		vec4 color = texture2D(u_texture, v_texCoord);
+		color = saturate(color, u_saturation + 1.0);
+		color = contrast(color, u_contrast);
+		color = color + vec4(u_brightness, u_brightness, u_brightness, 1.0);
+
+		gl_FragColor = color;
+	}
+`;
