@@ -114,9 +114,9 @@ export const triangleBlur = new Float32Array([
 ]);
 // prettier-ignore
 export const emboss = new Float32Array([
-	-2, -1,  0,
+	-1, -1,  0,
 	-1,  1,  1,
-	 0,  1,  2
+	 0,  1,  1
 ]);
 // prettier-ignore
 export const smoothify = new Float32Array([
