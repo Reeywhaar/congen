@@ -436,10 +436,10 @@ export class C {
 			distributionLocation,
 			Gen.range(8)
 				.subSplit(function*(i) {
-					yield randomInt(distribution / 4, distribution / 2);
-					yield randomInt(distribution / 4, distribution / 2);
-					yield randomInt(distribution * 0.5, distribution);
-					yield randomInt(distribution * 0.5, distribution);
+					yield randomInt(0, distribution / 2);
+					yield randomInt(0, distribution / 2);
+					yield randomInt(10, distribution);
+					yield randomInt(10, distribution);
 				})
 				.toArray()
 		);
