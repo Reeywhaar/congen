@@ -149,7 +149,6 @@ async function main() {
 		const appliedEffects = Array.from(appliedFilters.childNodes)
 			.map(x => x.innerText)
 			.map(x => filters[x]);
-		c.clear();
 		let texture = c.createTexture(image);
 		texture = await c.tile(texture, {
 			scale: scale,
