@@ -31,7 +31,7 @@
 			display: grid;
 			grid-template-columns: repeat(2, minmax(min-content, 150px));
 			grid-column-gap: 5px;
-			justify-content: end;
+			align-items: stretch;
 		}
 
 		canvas{
@@ -78,8 +78,12 @@
 			<div class="filter-stack"></div>
 		</div>
 		<div class="controls__row">
-			<input type="number" class="distributioninput" value="120" min="0" max="2000" placeholder="distribution">
+			<input type="number" class="distributioninput" value="0" min="0" max="2000" step="10" placeholder="distribution">
 			<button class="genb">Generate</button>
+		</div>
+		<div class="controls__row">
+			<div></div>
+			<button class="downloadb">Download</button>
 		</div>
 	</div>
 </body>

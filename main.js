@@ -35,7 +35,8 @@ async function main() {
 	canvas.height = window.innerHeight;
 	const c = new C(
 		canvas.getContext("webgl", {
-			// preserveDrawingBuffer: true,
+			preserveDrawingBuffer:
+				location.search.indexOf("nopreserve") > -1 ? false : true,
 		})
 	);
 	const images = await getImages();
@@ -51,22 +52,49 @@ async function main() {
 	const distributionInput = document.querySelector(".distributioninput");
 	const genb = document.querySelector(".genb");
 	const difb = document.querySelector(".difb");
+	const downloadButton = document.querySelector(".downloadb");
 	const fire = tools.debounce(() => {
 		genb.click();
 	}, 500);
+
+	downloadButton.addEventListener("click", async () => {
+		const blob = await new Promise((resolve, reject) => {
+			try {
+				canvas.toBlob(
+					result => {
+						if (!result) reject(new Error("No result"));
+						resolve(result);
+					},
+					"image/jpeg",
+					0.9
+				);
+			} catch (e) {
+				reject(e);
+			}
+		});
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.download = "congen-texture.jpg";
+		a.style.display = "none";
+		a.href = url;
+
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+	});
 
 	[winput, hinput, zinput, txinput, tyinput, distributionInput].forEach(e => {
 		e.addEventListener("keydown", e => {
 			if (e.which === 71) e.preventDefault();
 			if (e.which === 13) {
-				genb.click();
+				fire();
 			}
 		});
 	});
 
 	document.addEventListener("keydown", e => {
 		// 71 is g
-		if (e.which === 71) genb.click();
+		if (e.which === 71) fire();
 	});
 
 	images.forEach(src => {
