@@ -75,6 +75,16 @@ async function main() {
 		sel.appendChild(opt);
 	});
 
+	document.body.addEventListener("dragover", e => {
+		e.preventDefault();
+	});
+
+	document.body.addEventListener("drop", e => {
+		e.preventDefault();
+		if (!e.dataTransfer.files[0]) return;
+		console.log(e.dataTransfer.files[0]);
+	});
+
 	Object.keys(filters).forEach(filter => {
 		const opt = document.createElement("div");
 		opt.classList.add("filter-item");
@@ -92,13 +102,20 @@ async function main() {
 	});
 
 	genb.addEventListener("click", async e => {
-		canvas.width = parseInt(winput.value, 10) || window.innerWidth;
-		canvas.height = parseInt(hinput.value, 10) || window.innerHeight;
+		const max = 20000;
+		canvas.width = Math.min(
+			parseInt(winput.value, 10) || window.innerWidth,
+			max
+		);
+		canvas.height = Math.min(
+			parseInt(hinput.value, 10) || window.innerHeight,
+			max
+		);
 		const image = await readImage(sel.options[sel.selectedIndex].text);
-		const tileX = parseInt(txinput.value, 10);
-		const tileY = parseInt(tyinput.value, 10);
+		const tileX = Math.min(parseInt(txinput.value, 10), image.width);
+		const tileY = Math.min(parseInt(tyinput.value, 10), image.width);
 		const distribution = parseInt(distributionInput.value, 10);
-		const scale = 1 / parseFloat(zinput.value, 10) || 1;
+		const scale = 1 / (parseFloat(zinput.value, 10) || 1);
 		c.clear();
 		let texture = await c.tile(image, {
 			scale: scale,
@@ -121,16 +138,6 @@ async function main() {
 			);
 		}
 		c.render(texture);
-	});
-
-	document.body.addEventListener("dragover", e => {
-		e.preventDefault();
-	});
-
-	document.body.addEventListener("drop", e => {
-		e.preventDefault();
-		if (!e.dataTransfer.files[0]) return;
-		console.log(e.dataTransfer.files[0]);
 	});
 }
 
