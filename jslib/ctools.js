@@ -232,7 +232,7 @@ export class C {
 		const textureLocation = guf("u_texture");
 		const textureSizeLocation = guf("u_textureSize");
 		const textureMatrixLocation = guf("u_textureMatrix");
-		const kernelLocation = guf("u_kernel[0]");
+		const kernelLocation = guf("u_kernel");
 		const kernelWeightLocation = guf("u_kernelWeight");
 
 		this.ctx.uniform1i(textureLocation, 0);
@@ -270,6 +270,71 @@ export class C {
 					texture.height
 				);
 		}
+	}
+
+	/**
+	 * @param {Texture} texture
+	 * @param {string} program
+	 * @returns Texture
+	 */
+	applyProgram(texture, program, uniforms = []) {
+		this.setProgram(program);
+
+		const defaultUniforms = [
+			{
+				key: "texture",
+				type: "1i",
+				value: 0,
+			},
+			{
+				key: "matrix",
+				type: "Matrix4fv",
+				value: pipe(
+					twgl.m4.ortho(0, texture.width, 0, texture.height, -1, 1),
+					matrix => twgl.m4.scale(matrix, [texture.width, texture.height, 1])
+				),
+			},
+			{
+				key: "textureMatrix",
+				type: "Matrix4fv",
+				value: twgl.m4.translation([0, 0, 0]),
+			},
+			{
+				key: "textureSize",
+				type: "2f",
+				value: [texture.width, texture.height],
+			},
+		];
+
+		for (let uniform of [...defaultUniforms, ...uniforms]) {
+			const loc = this.ctx.getUniformLocation(this.program, `u_${uniform.key}`);
+			if (loc === null)
+				throw new Error(`unable to get Location "u_${uniform.key}"`);
+			if (uniform.type.charAt(uniform.type.length - 1) === "v") {
+				if (uniform.type.indexOf("Matrix") === 0) {
+					this.ctx[`uniform${uniform.type}`](loc, false, uniform.value);
+					continue;
+				}
+
+				this.ctx[`uniform${uniform.type}`](loc, uniform.value);
+				continue;
+			}
+			if (!Array.isArray(uniform.value)) {
+				this.ctx[`uniform${uniform.type}`](loc, uniform.value);
+				continue;
+			}
+			this.ctx[`uniform${uniform.type}`](loc, ...uniform.value);
+		}
+
+		const [fr, fbtext] = this.createFramebufferAndTexture(
+			texture.width,
+			texture.height
+		);
+
+		this.setFramebuffer(fr, texture.width, texture.height);
+		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture.texture);
+		this.ctx.drawArrays(this.ctx.TRIANGLES, 0, 6);
+		return fbtext;
 	}
 
 	/**
@@ -443,60 +508,27 @@ export class C {
 	 * @returns Texture
 	 */
 	diffuse(texture, distribution = 120) {
-		this.setProgram(programs.diffuse);
-
-		const guf = pointer => {
-			const loc = this.ctx.getUniformLocation(this.program, pointer);
-			if (loc === null) throw new Error(`unable to set Location ${pointer}`);
-			return loc;
-		};
-
-		const matrixLocation = guf("u_matrix");
-		const textureLocation = guf("u_texture");
-		const textureMatrixLocation = guf("u_textureMatrix");
-		const textureSizeLocation = guf("u_textureSize");
-		const distributionSizeLocation = guf("u_distributionSize");
-		const distributionLocation = guf("u_distribution");
-
-		this.ctx.uniform1f(distributionSizeLocation, distribution);
-		this.ctx.uniform1fv(
-			distributionLocation,
-			Gen.range(8)
-				.subSplit(function*(i) {
-					yield randomInt(0, distribution / 2);
-					yield randomInt(0, distribution / 2);
-					yield randomInt(10, distribution);
-					yield randomInt(10, distribution);
-				})
-				.toArray()
-		);
-
-		this.ctx.uniform2f(textureSizeLocation, texture.width, texture.height);
-
-		this.ctx.uniform1i(textureLocation, 0);
-
-		let matrix = pipe(
-			twgl.m4.ortho(0, texture.width, 0, texture.height, -1, 1),
-			matrix => twgl.m4.scale(matrix, [texture.width, texture.height, 1])
-		);
-		this.ctx.uniformMatrix4fv(matrixLocation, false, matrix);
-
-		const texMatrix = twgl.m4.translation([0, 0, 0]);
-		this.ctx.uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
-
-		const [fr, fbtext] = this.createFramebufferAndTexture(
-			texture.width,
-			texture.height
-		);
-
-		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture.texture);
-
-		this.setFramebuffer(fr, texture.width, texture.height);
-
-		this.ctx.drawArrays(this.ctx.TRIANGLES, 0, 6);
-
-		return fbtext;
+		return this.applyProgram(texture, programs.diffuse, [
+			{
+				key: "distributionSize",
+				type: "1f",
+				value: distribution,
+			},
+			{
+				key: "distribution",
+				type: "1fv",
+				value: Gen.range(8)
+					.subSplit(function*(i) {
+						yield randomInt(0, distribution / 2);
+						yield randomInt(0, distribution / 2);
+						yield randomInt(10, distribution);
+						yield randomInt(10, distribution);
+					})
+					.toArray(),
+			},
+		]);
 	}
+
 	/**
 	 * @param {Texture} texture
 	 * @param {Number} saturation
