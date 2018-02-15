@@ -63,7 +63,6 @@ async function main() {
 	const distributionInput = document.querySelector(".distributioninput");
 	const genb = document.querySelector(".genb");
 	const difb = document.querySelector(".difb");
-	const maskTilesCheckbox = document.querySelector(".mask-tiles__checkbox");
 	const maskTileSizeInput = document.querySelector(".mask-tiles__value");
 	const saturationInput = document.querySelector(".saturationInput");
 	const contrastInput = document.querySelector(".contrastInput");
@@ -176,8 +175,7 @@ async function main() {
 			Math.min(parseInt(txinput.value, 10), image.width) || canvas.width / 8;
 		const tileY =
 			Math.min(parseInt(tyinput.value, 10), image.width) || canvas.width / 8;
-		const maskTiles = maskTilesCheckbox.checked;
-		const maskTileSize = parseInt(maskTileSizeInput.value, 10) || 10;
+		const maskTileSize = parseInt(maskTileSizeInput.value, 10) || 0;
 		const distribution = parseInt(distributionInput.value, 10);
 		const scale = 1 / (parseFloat(zinput.value) || 1);
 		const saturation = parseFloat(saturationInput.value) || 0;
@@ -195,7 +193,7 @@ async function main() {
 			dstWidth: canvas.width + distribution * 2,
 			dstHeight: canvas.height + distribution * 2,
 		});
-		if (maskTiles && maskTileSize > 0) {
+		if (maskTileSize > 0) {
 			texture = c.maskTiles(
 				texture,
 				tileX * scale,

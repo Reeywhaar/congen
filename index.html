@@ -124,10 +124,6 @@
 			<input type="number" class="zinput" value="1" min="1" step="0.5" max="10" placeholder="scale" title="Scale">
 			<select class="src"></select>
 		</div>
-		<div class="mask-tiles controls__row">
-			<label class="mask-tiles__label"><input class="mask-tiles__checkbox" type="checkbox" checked>Mask tiles</label>
-			<input type="number" class="mask-tiles__value" value="10" min="5" step="5" max="100" placeholder="Tile mask size" title="Tile mask size">
-		</div>
 		<div class="controls__row">
 			<div class="applied-filters"></div>
 			<div class="filter-stack"></div>
@@ -138,11 +134,11 @@
 			<input type="range" class="adjustments__input brightnessInput" step="0.01" value="0" min="-1" max="1" title="Brightness">
 		</div>
 		<div class="controls__row">
+			<input type="number" class="mask-tiles__value" value="10" min="0" step="5" max="100" placeholder="Tile mask size" title="Tile mask size">
 			<input type="number" class="distributioninput" value="0" min="0" max="2000" step="10" placeholder="distribution" title="Diffusion">
-			<button class="genb">Generate</button>
 		</div>
 		<div class="controls__row">
-			<div></div>
+			<button class="genb">Generate</button>
 			<button class="downloadb">Download</button>
 		</div>
 		<div class="medium-grey"></div>
