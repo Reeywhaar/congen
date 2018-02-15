@@ -3,7 +3,9 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
-	<title>Document</title>
+	<meta name="keywords" content="webgl, canvas, texture generator, canvas generator, paper texture, concrete texture">
+	<meta name="author" content="Misha Vyrtsev">
+	<title>Vyrtsev Texture Generator</title>
 	<script defer src="./node_modules/twgl.js/dist/4.x/twgl-full.js"></script>
 	<script defer src="./main.js" type="module"></script>
 	<style>
@@ -129,7 +131,7 @@
 			<input class="tyinput" type="number" placeholder="time height" value="160" max="3000" title="Tile height">
 		</div>
 		<div class="controls__row">
-			<input type="number" class="zinput" value="1" min="1" step="0.5" max="10" placeholder="scale" title="Scale">
+			<input type="number" class="zinput" value="2" min="1" step="0.5" max="10" placeholder="scale" title="Scale">
 			<select class="src"></select>
 		</div>
 		<div class="controls__row">
@@ -142,7 +144,7 @@
 			<input type="range" class="adjustments__input brightnessInput" step="0.01" value="0" min="-1" max="1" title="Brightness">
 		</div>
 		<div class="controls__row">
-			<input type="number" class="mask-tiles__value" value="10" min="0" step="5" max="300" placeholder="Tile mask size" title="Tile mask size">
+			<input type="number" class="mask-tiles__value" value="45" min="0" step="5" max="300" placeholder="Tile mask size" title="Tile mask size">
 			<input type="number" class="distributioninput" value="0" min="0" max="2000" step="10" placeholder="distribution" title="Diffusion">
 		</div>
 		<div class="dropped-image controls__row">
