@@ -39,6 +39,8 @@ async function main() {
 	);
 	const images = await getImages();
 
+	let droppedImage;
+
 	const controlsEl = document.querySelector(".controls");
 	const winput = document.querySelector(".winput");
 	const hinput = document.querySelector(".hinput");
@@ -56,6 +58,7 @@ async function main() {
 	const contrastInput = document.querySelector(".contrastInput");
 	const brightnessInput = document.querySelector(".brightnessInput");
 	const downloadButton = document.querySelector(".downloadb");
+	const droppedImageEl = document.querySelector(".dropped-image__container");
 	const fire = tools.debounce(() => {
 		genb.click();
 	}, 200);
@@ -122,10 +125,21 @@ async function main() {
 		e.preventDefault();
 	});
 
-	document.body.addEventListener("drop", e => {
+	document.body.addEventListener("drop", async e => {
 		e.preventDefault();
 		if (!e.dataTransfer.files[0]) return;
-		console.log(e.dataTransfer.files[0]);
+		const name = e.dataTransfer.files[0].name;
+		const url = URL.createObjectURL(e.dataTransfer.files[0]);
+		droppedImage = await readImage(url);
+
+		const el = document.createElement("span");
+		el.innerText = `Uploaded image: ${name}`;
+		el.addEventListener("click", () => {
+			droppedImageEl.removeChild(el);
+			droppedImage = null;
+		});
+		droppedImageEl.innerHTML = "";
+		droppedImageEl.appendChild(el);
 	});
 
 	Object.keys(filters).forEach(filter => {
@@ -154,11 +168,11 @@ async function main() {
 			parseInt(hinput.value, 10) || window.innerHeight,
 			max
 		);
-		const image = await readImage(sel.options[sel.selectedIndex].text).catch(
-			e => {
+		const image =
+			droppedImage ||
+			(await readImage(sel.options[sel.selectedIndex].text).catch(e => {
 				throw e;
-			}
-		);
+			}));
 		const tileX =
 			Math.min(parseInt(txinput.value, 10), image.width) || canvas.width / 8;
 		const tileY =
