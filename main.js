@@ -7,13 +7,23 @@ function getImages() {
 	return fetch("./api/list.php").then(req => req.json());
 }
 
-async function readImage(url) {
+function readImage(url) {
 	return new Promise((resolve, reject) => {
 		const image = new Image();
 		image.addEventListener("load", () => {
+			if (image.width === 0 || image.height === 0) {
+				reject(new Error(`Unable to get image ${url}`));
+				return;
+			}
 			resolve(image);
 		});
+		image.addEventListener("error", e => {
+			reject(new Error(`Unable to get image ${url}`));
+		});
 		image.src = url;
+		setTimeout(() => {
+			reject(new Error(`Unable to get image ${url}`));
+		}, 2000);
 	});
 }
 
@@ -134,15 +144,11 @@ async function main() {
 
 	genb.addEventListener("click", async e => {
 		const max = 20000;
-		canvas.width = Math.min(
-			parseInt(winput.value, 10) || window.innerWidth,
-			max
+		const image = await readImage(sel.options[sel.selectedIndex].text).catch(
+			e => {
+				throw e;
+			}
 		);
-		canvas.height = Math.min(
-			parseInt(hinput.value, 10) || window.innerHeight,
-			max
-		);
-		const image = await readImage(sel.options[sel.selectedIndex].text);
 		const tileX =
 			Math.min(parseInt(txinput.value, 10), image.width) || canvas.width / 8;
 		const tileY =
@@ -155,6 +161,16 @@ async function main() {
 		const appliedEffects = Array.from(appliedFilters.childNodes)
 			.map(x => x.innerText)
 			.map(x => filters[x]);
+
+		canvas.width = Math.min(
+			parseInt(winput.value, 10) || window.innerWidth,
+			max
+		);
+		canvas.height = Math.min(
+			parseInt(hinput.value, 10) || window.innerHeight,
+			max
+		);
+
 		let texture = c.createTexture(image);
 		texture = await c.tile(texture, {
 			scale: scale,
@@ -174,6 +190,8 @@ async function main() {
 		}
 		c.render(texture);
 	});
+
+	genb.click();
 }
 
 main().catch(e => console.error(e));

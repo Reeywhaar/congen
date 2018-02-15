@@ -144,11 +144,11 @@ export class C {
 				this.ctx.UNSIGNED_BYTE,
 				image
 			);
-		} else {
-			return new Texture(texture, null, null);
-		}
 
 		return new Texture(texture, image.width, image.height);
+	}
+
+		return new Texture(texture, null, null);
 	}
 
 	/**
@@ -369,6 +369,7 @@ export class C {
 			dstHeight: dstHeight = this.ctx.canvas.height,
 			scale: scale = 1,
 			flipY: flipY = false,
+			flipX: flipX = false,
 		} = {}
 	) {
 		if (!srcWidth) srcWidth = image.width;
@@ -385,6 +386,7 @@ export class C {
 			dstWidth,
 			scale,
 			flipY,
+			flipX,
 		});
 	}
 
