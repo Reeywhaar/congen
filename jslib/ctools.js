@@ -565,6 +565,43 @@ export class C {
 		]);
 	}
 
+	/**
+	 * @param {Texture} texture
+	 * @param {Number} x
+	 * @param {Number} y
+	 * @param {Number} size
+	 * @returns Texture
+	 */
+	maskTiles(texture, x, y, size = 20) {
+		return pipe(
+			this.applyProgram(texture, programs.antitile, [
+				{
+					key: "tile",
+					type: "3f",
+					value: [x, y, size],
+				},
+				{
+					key: "direction",
+					type: "1i",
+					value: 0,
+				},
+			]),
+			texture =>
+				this.applyProgram(texture, programs.antitile, [
+					{
+						key: "tile",
+						type: "3f",
+						value: [x, y, size],
+					},
+					{
+						key: "direction",
+						type: "1i",
+						value: 1,
+					},
+				])
+		);
+	}
+
 	render(
 		texture,
 		{
