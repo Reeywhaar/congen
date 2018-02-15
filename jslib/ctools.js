@@ -145,8 +145,8 @@ export class C {
 				image
 			);
 
-		return new Texture(texture, image.width, image.height);
-	}
+			return new Texture(texture, image.width, image.height);
+		}
 
 		return new Texture(texture, null, null);
 	}
@@ -411,6 +411,7 @@ export class C {
 		const columns = Math.ceil(dstWidth / srcWidth / scale);
 
 		let [fb, fbtext] = this.createFramebufferAndTexture(dstWidth, dstHeight);
+		this.setFramebuffer(fb, dstWidth, dstHeight);
 
 		for (let row of Gen.range(rows).map(x => x * srcHeight * scale)) {
 			for (let col of Gen.range(columns).map(x => x * srcWidth * scale)) {
@@ -547,13 +548,24 @@ export class C {
 		return fbtext;
 	}
 
-	render(texture, flipY = false) {
-		this.setFramebuffer(null);
+	render(
+		texture,
+		{
+			srcX: srcX = 0,
+			srcY: srcY = 0,
+			srcWidth: srcWidth = texture.width,
+			srcHeight: srcHeight = texture.height,
+			flipY: flipY = false,
+		} = {}
+	) {
+		this.setFramebuffer(null, this.ctx.canvas.width, this.ctx.canvas.height);
 		this.drawTexture(texture, {
 			dstWidth: this.ctx.canvas.width,
 			dstHeight: this.ctx.canvas.height,
-			srcWidth: texture.width,
-			srcHeight: texture.height,
+			srcX,
+			srcY,
+			srcWidth,
+			srcHeight,
 			flipY: true,
 		});
 	}

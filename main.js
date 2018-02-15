@@ -144,6 +144,14 @@ async function main() {
 
 	genb.addEventListener("click", async e => {
 		const max = 20000;
+		canvas.width = Math.min(
+			parseInt(winput.value, 10) || window.innerWidth,
+			max
+		);
+		canvas.height = Math.min(
+			parseInt(hinput.value, 10) || window.innerHeight,
+			max
+		);
 		const image = await readImage(sel.options[sel.selectedIndex].text).catch(
 			e => {
 				throw e;
@@ -162,22 +170,13 @@ async function main() {
 			.map(x => x.innerText)
 			.map(x => filters[x]);
 
-		canvas.width = Math.min(
-			parseInt(winput.value, 10) || window.innerWidth,
-			max
-		);
-		canvas.height = Math.min(
-			parseInt(hinput.value, 10) || window.innerHeight,
-			max
-		);
-
 		let texture = c.createTexture(image);
 		texture = await c.tile(texture, {
 			scale: scale,
 			srcWidth: tileX,
 			srcHeight: tileY,
-			dstWidth: canvas.width,
-			dstHeight: canvas.height,
+			dstWidth: canvas.width + distribution * 2,
+			dstHeight: canvas.height + distribution * 2,
 		});
 		if (distribution > 0) {
 			texture = c.diffuse(texture, distribution);
@@ -188,7 +187,14 @@ async function main() {
 		if (appliedEffects.length > 0) {
 			texture = c.applyEffects(texture, appliedEffects);
 		}
-		c.render(texture);
+		c.setFramebuffer(null, canvas.width, canvas.height);
+		c.drawTexture(texture, {
+			dstWidth: canvas.width,
+			dstHeight: canvas.height,
+			dstX: -distribution,
+			dstY: -distribution,
+			flipY: true,
+		});
 	});
 
 	genb.click();
