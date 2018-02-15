@@ -187,13 +187,9 @@ async function main() {
 		if (appliedEffects.length > 0) {
 			texture = c.applyEffects(texture, appliedEffects);
 		}
-		c.setFramebuffer(null, canvas.width, canvas.height);
-		c.drawTexture(texture, {
-			dstWidth: canvas.width,
-			dstHeight: canvas.height,
-			dstX: -distribution,
-			dstY: -distribution,
-			flipY: true,
+		c.render(texture, {
+			srcX: distribution,
+			srcY: -distribution,
 		});
 	});
 
