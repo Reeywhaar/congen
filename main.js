@@ -51,6 +51,7 @@ async function main() {
 	);
 	const images = await getImages();
 
+	const controlsEl = document.querySelector(".controls");
 	const winput = document.querySelector(".winput");
 	const hinput = document.querySelector(".hinput");
 	const zinput = document.querySelector(".zinput");
@@ -71,6 +72,10 @@ async function main() {
 	const fire = tools.debounce(() => {
 		genb.click();
 	}, 200);
+
+	controlsEl.addEventListener("mouseleave", e => {
+		controlsEl.classList.add("hideable");
+	});
 
 	downloadButton.addEventListener("click", async () => {
 		const blob = await new Promise((resolve, reject) => {
