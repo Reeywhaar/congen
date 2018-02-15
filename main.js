@@ -206,11 +206,11 @@ async function main() {
 		if (distribution > 0) {
 			texture = c.diffuse(texture, distribution);
 		}
-		if (saturation || brightness || contrast) {
-			texture = c.adjust(texture, saturation, contrast, brightness);
-		}
 		if (appliedEffects.length > 0) {
 			texture = c.applyEffects(texture, appliedEffects);
+		}
+		if (saturation || brightness || contrast) {
+			texture = c.adjust(texture, saturation, contrast, brightness);
 		}
 		c.render(texture, {
 			srcX: distribution,
