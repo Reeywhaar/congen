@@ -41,17 +41,17 @@ export const sharp3 = new Float32Array([
 	-1, -1, -1
 ]);
 // prettier-ignore
-export const edgeDetect = new Float32Array([
-	-0.125, -0.125, -0.125,
-	-0.125,      1, -0.125,
-	-0.125, -0.125, -0.125,
-]);
-// prettier-ignore
-export const edgeDetect2 = new Float32Array([
-	-1, -1, -1,
-	-1,  8, -1,
-	-1, -1, -1,
-]);
+// export const edgeDetect = new Float32Array([
+// 	-0.125, -0.125, -0.125,
+// 	-0.125,      1, -0.125,
+// 	-0.125, -0.125, -0.125,
+// ]);
+// // prettier-ignore
+// export const edgeDetect2 = new Float32Array([
+// 	-1, -1, -1,
+// 	-1,  8, -1,
+// 	-1, -1, -1,
+// ]);
 // prettier-ignore
 // export const edgeDetect3 = new Float32Array([
 // 	-5, 0, 0,
@@ -59,11 +59,11 @@ export const edgeDetect2 = new Float32Array([
 // 	 0, 0, 5
 // ]);
 // prettier-ignore
-export const edgeDetect4 = new Float32Array([
-	-1, -1, -1,
-	 0,  0,  0,
-	 1,  1,  1
-]);
+// export const edgeDetect4 = new Float32Array([
+// 	-1, -1, -1,
+// 	 0,  0,  0,
+// 	 1,  1,  1
+// ]);
 // prettier-ignore
 // export const edgeDetect5 = new Float32Array([
 // 	-1, -1, -1,
