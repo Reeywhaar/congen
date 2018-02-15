@@ -149,6 +149,7 @@ export const adjust = `
 	varying vec2 v_texCoord;
 
 	uniform sampler2D u_texture;
+	uniform vec2      u_textureSize;
 	uniform float     u_saturation;
 	uniform float     u_contrast;
 	uniform float     u_brightness;
@@ -187,6 +188,8 @@ export const adjust = `
 	}
 
 	void main() {
+		// don't strip
+		u_textureSize;
 		vec4 color = texture2D(u_texture, v_texCoord);
 		color = saturate(color, u_saturation + 1.0);
 		color = contrast(color, u_contrast);

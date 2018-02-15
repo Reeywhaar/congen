@@ -538,46 +538,23 @@ export class C {
 	 * @returns Texture
 	 */
 	adjust(texture, saturation = 0, contrast = 0, brightness = 0) {
-		this.setProgram(programs.adjust);
-
-		const guf = pointer => {
-			const loc = this.ctx.getUniformLocation(this.program, pointer);
-			if (loc === null) throw new Error(`unable to set Location ${pointer}`);
-			return loc;
-		};
-
-		const textureLocation = guf("u_texture");
-		const matrixLocation = guf("u_matrix");
-		const textureMatrixLocation = guf("u_textureMatrix");
-		const saturationLocation = guf("u_saturation");
-		const contrastLocation = guf("u_contrast");
-		const brightnessLocation = guf("u_brightness");
-
-		this.ctx.uniform1f(saturationLocation, saturation);
-		this.ctx.uniform1f(contrastLocation, contrast);
-		this.ctx.uniform1f(brightnessLocation, brightness);
-
-		let matrix = pipe(
-			twgl.m4.ortho(0, texture.width, 0, texture.height, -1, 1),
-			matrix => twgl.m4.scale(matrix, [texture.width, texture.height, 1])
-		);
-		this.ctx.uniformMatrix4fv(matrixLocation, false, matrix);
-
-		const texMatrix = twgl.m4.translation([0, 0, 0]);
-		this.ctx.uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
-
-		const [fr, fbtext] = this.createFramebufferAndTexture(
-			texture.width,
-			texture.height
-		);
-
-		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture.texture);
-
-		this.setFramebuffer(fr, texture.width, texture.height);
-
-		this.ctx.drawArrays(this.ctx.TRIANGLES, 0, 6);
-
-		return fbtext;
+		return this.applyProgram(texture, programs.adjust, [
+			{
+				key: "saturation",
+				type: "1f",
+				value: saturation,
+			},
+			{
+				key: "brightness",
+				type: "1f",
+				value: brightness,
+			},
+			{
+				key: "contrast",
+				type: "1f",
+				value: contrast,
+			},
+		]);
 	}
 
 	render(
