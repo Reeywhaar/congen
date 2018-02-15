@@ -208,68 +208,27 @@ export class C {
 	}
 
 	/**
-	 * @param {Texture} texture
-	 * @param {array} effects
-	 * @returns Texture
+	 * @param {string} key
+	 * @param {string} type
+	 * @param {Number|array} value
 	 */
-	applyEffects(texture, effects = []) {
-		if (effects.length < 1) return texture;
+	setUniform(key, type, value) {
+		const loc = this.ctx.getUniformLocation(this.program, `u_${key}`);
+		if (loc === null) throw new Error(`unable to get Location "u_${key}"`);
+		if (type.charAt(type.length - 1) === "v") {
+			if (type.indexOf("Matrix") === 0) {
+				this.ctx[`uniform${type}`](loc, false, value);
+				return;
+			}
 
-		this.setProgram(programs.effects);
-
-		const getKernelWeight = kernel => {
-			const weight = kernel.reduce((c, x) => c + x);
-			return weight <= 0 ? 1 : weight;
-		};
-
-		const guf = pointer => {
-			const loc = this.ctx.getUniformLocation(this.program, pointer);
-			if (loc === null) throw new Error(`unable to set Location "${pointer}"`);
-			return loc;
-		};
-
-		const matrixLocation = guf("u_matrix");
-		const textureLocation = guf("u_texture");
-		const textureSizeLocation = guf("u_textureSize");
-		const textureMatrixLocation = guf("u_textureMatrix");
-		const kernelLocation = guf("u_kernel");
-		const kernelWeightLocation = guf("u_kernelWeight");
-
-		this.ctx.uniform1i(textureLocation, 0);
-		this.ctx.uniform2f(textureSizeLocation, texture.width, texture.height);
-
-		let matrix = pipe(
-			twgl.m4.ortho(0, texture.width, 0, texture.height, -1, 1),
-			matrix => twgl.m4.scale(matrix, [texture.width, texture.height, 1])
-		);
-
-		this.ctx.uniformMatrix4fv(matrixLocation, false, matrix);
-
-		const texMatrix = twgl.m4.translation([0, 0, 0]);
-
-		this.ctx.uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
-
-		const fb = [
-			this.createFramebufferAndTexture(texture.width, texture.height),
-			this.createFramebufferAndTexture(texture.width, texture.height),
-		];
-
-		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture.texture);
-
-		for (let [index, effect] of Gen.fromArray(effects).enumerate()) {
-			this.setFramebuffer(fb[index % 2][0], texture.width, texture.height);
-
-			this.ctx.uniform1fv(kernelLocation, effect);
-			this.ctx.uniform1f(kernelWeightLocation, getKernelWeight(effect));
-			this.ctx.drawArrays(this.ctx.TRIANGLES, 0, 6);
-			this.ctx.bindTexture(this.ctx.TEXTURE_2D, fb[index % 2][1].texture);
-			if (index === effects.length - 1)
-				return new Texture(
-					fb[index % 2][1].texture,
-					texture.width,
-					texture.height
-				);
+			this.ctx[`uniform${type}`](loc, value);
+			return;
 		}
+		if (!Array.isArray(value)) {
+			this.ctx[`uniform${type}`](loc, value);
+			return;
+		}
+		this.ctx[`uniform${type}`](loc, ...value);
 	}
 
 	/**
@@ -307,23 +266,7 @@ export class C {
 		];
 
 		for (let uniform of [...defaultUniforms, ...uniforms]) {
-			const loc = this.ctx.getUniformLocation(this.program, `u_${uniform.key}`);
-			if (loc === null)
-				throw new Error(`unable to get Location "u_${uniform.key}"`);
-			if (uniform.type.charAt(uniform.type.length - 1) === "v") {
-				if (uniform.type.indexOf("Matrix") === 0) {
-					this.ctx[`uniform${uniform.type}`](loc, false, uniform.value);
-					continue;
-				}
-
-				this.ctx[`uniform${uniform.type}`](loc, uniform.value);
-				continue;
-			}
-			if (!Array.isArray(uniform.value)) {
-				this.ctx[`uniform${uniform.type}`](loc, uniform.value);
-				continue;
-			}
-			this.ctx[`uniform${uniform.type}`](loc, ...uniform.value);
+			this.setUniform(uniform.key, uniform.type, uniform.value);
 		}
 
 		const [fr, fbtext] = this.createFramebufferAndTexture(
@@ -498,6 +441,71 @@ export class C {
 		}
 
 		return fbtext;
+	}
+
+	/**
+	 * @param {Texture} texture
+	 * @param {array} effects
+	 * @returns Texture
+	 */
+	applyEffects(texture, effects = []) {
+		if (effects.length < 1) return texture;
+
+		this.setProgram(programs.effects);
+
+		const getKernelWeight = kernel => {
+			const weight = kernel.reduce((c, x) => c + x);
+			return weight <= 0 ? 1 : weight;
+		};
+
+		const guf = pointer => {
+			const loc = this.ctx.getUniformLocation(this.program, pointer);
+			if (loc === null) throw new Error(`unable to set Location "${pointer}"`);
+			return loc;
+		};
+
+		const matrixLocation = guf("u_matrix");
+		const textureLocation = guf("u_texture");
+		const textureSizeLocation = guf("u_textureSize");
+		const textureMatrixLocation = guf("u_textureMatrix");
+		const kernelLocation = guf("u_kernel");
+		const kernelWeightLocation = guf("u_kernelWeight");
+
+		this.ctx.uniform1i(textureLocation, 0);
+		this.ctx.uniform2f(textureSizeLocation, texture.width, texture.height);
+
+		let matrix = pipe(
+			twgl.m4.ortho(0, texture.width, 0, texture.height, -1, 1),
+			matrix => twgl.m4.scale(matrix, [texture.width, texture.height, 1])
+		);
+
+		this.ctx.uniformMatrix4fv(matrixLocation, false, matrix);
+
+		const texMatrix = twgl.m4.translation([0, 0, 0]);
+
+		this.ctx.uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
+
+		const fb = [
+			this.createFramebufferAndTexture(texture.width, texture.height),
+			this.createFramebufferAndTexture(texture.width, texture.height),
+		];
+
+		this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture.texture);
+
+		for (let [index, effect] of Gen.fromArray(effects).enumerate()) {
+			this.setFramebuffer(fb[index % 2][0], texture.width, texture.height);
+
+			this.ctx.uniform1fv(kernelLocation, effect);
+			this.ctx.uniform1f(kernelWeightLocation, getKernelWeight(effect));
+			this.ctx.drawArrays(this.ctx.TRIANGLES, 0, 6);
+			this.ctx.bindTexture(this.ctx.TEXTURE_2D, fb[index % 2][1].texture);
+			if (index === effects.length - 1)
+				return new Texture(
+					fb[index % 2][1].texture,
+					texture.width,
+					texture.height
+				);
+		}
 	}
 
 	/**
