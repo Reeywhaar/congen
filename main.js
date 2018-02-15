@@ -27,18 +27,6 @@ function readImage(url) {
 	});
 }
 
-function getShaders() {
-	return fetch("./api/shaders.php").then(req => req.json());
-}
-
-function getShader(name) {
-	return fetch(`./shaders/${name}.glslx`).then(req => {
-		if (req.status < 200 || req.status >= 400)
-			throw new Error(`request failed with code ${req.status}`);
-		return req.text();
-	});
-}
-
 async function main() {
 	const canvas = document.querySelector("canvas");
 	canvas.width = window.innerWidth;
