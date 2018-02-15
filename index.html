@@ -10,9 +10,19 @@
 		html{
 			font-family: sans-serif;
 		}
+
 		html,body {
 			padding: 0;
 			margin: 0;
+		}
+
+		body {
+			background: rgb(127,127,127);
+		}
+
+		input[type="number"]{
+			display: block;
+			width: 100%;
 		}
 
 		.controls {
@@ -72,11 +82,28 @@
 			margin: 0;
 			width: 100%;
 		}
+
+		.medium-grey{
+			height: 40px;
+			background-color: rgb(127,127,127);
+			position: relative;
+			bottom: -2px;
+			left: -2px;
+			width:calc(100% + 4px);
+		}
+
+		.logo{
+			grid-template-columns: minmax(min-content, auto);
+			text-align: center;
+		}
 	</style>
 </head>
 <body>
 	<canvas width=600 height=600></canvas>
 	<div class="controls">
+		<div class="logo controls__row">
+			<a href="//vyrtsev.com"><img src="./horrorse.png"></a>
+		</div>
 		<div class="controls__row">
 			<input class="winput" type="number" placeholder="width" value="0" max="20000" title="Canvas width">
 			<input class="hinput" type="number" placeholder="height" value="0" max="20000" title="Canvas height">
@@ -93,19 +120,20 @@
 			<div class="applied-filters"></div>
 			<div class="filter-stack"></div>
 		</div>
-		<div class="controls__row">
-			<input type="number" class="distributioninput" value="0" min="0" max="2000" step="10" placeholder="distribution" title="Diffuse">
-			<button class="genb">Generate</button>
-		</div>
 		<div class="adjustments controls__row">
 			<input type="range" class="adjustments__input saturationInput" step="0.01" value="0" min="-1" max="1" title="Saturation">
 			<input type="range" class="adjustments__input contrastInput" step="0.01" value="0" min="-1" max="1" title="Contrast">
 			<input type="range" class="adjustments__input brightnessInput" step="0.01" value="0" min="-1" max="1" title="Brightness">
 		</div>
 		<div class="controls__row">
+			<input type="number" class="distributioninput" value="0" min="0" max="2000" step="10" placeholder="distribution" title="Diffusion">
+			<button class="genb">Generate</button>
+		</div>
+		<div class="controls__row">
 			<div></div>
 			<button class="downloadb">Download</button>
 		</div>
+		<div class="medium-grey"></div>
 	</div>
 </body>
 </html>
