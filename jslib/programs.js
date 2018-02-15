@@ -210,8 +210,7 @@ export const adjust = `
 	float pb = 0.114;
 
 	float contrast(float x, float amount){
-		float v = abs((x - 0.5) * 2.0);
-		return (sign((x - 0.5) * 2.0) * (v + ((1.0 - v) * v * amount))) / 2.0 + 0.5;
+		return (x - 0.5) * (amount / 0.5 + 1.0) + 0.5;
 	}
 
 	vec4 contrast(vec4 v, float amount){
