@@ -39,33 +39,40 @@ async function main() {
 	);
 	const images = await getImages();
 
-	const controlsEl = document.querySelector(".controls");
-	const winput = document.querySelector(".winput");
-	const hinput = document.querySelector(".hinput");
-	const zinput = document.querySelector(".zinput");
-	const txinput = document.querySelector(".txinput");
-	const tyinput = document.querySelector(".tyinput");
-	const sel = document.querySelector(".src");
-	const appliedFilters = document.querySelector(".applied-filters");
-	const filterStack = document.querySelector(".filter-stack");
-	const distributionInput = document.querySelector(".distributioninput");
-	const genb = document.querySelector(".genb");
-	const difb = document.querySelector(".difb");
-	const maskTileSizeInput = document.querySelector(".mask-tiles__value");
-	const saturationInput = document.querySelector(".saturationInput");
-	const contrastInput = document.querySelector(".contrastInput");
-	const brightnessInput = document.querySelector(".brightnessInput");
-	const downloadButton = document.querySelector(".downloadb");
-	const droppedImageEl = document.querySelector(".dropped-image__container");
+	const qs = x => {
+		const el = document.querySelector(x);
+		if (!el) throw new Error("el is null");
+		return el;
+	};
+
+	const dom = {};
+	dom.controls = qs(".controls");
+	dom.width = qs(".winput");
+	dom.height = qs(".hinput");
+	dom.scale = qs(".zinput");
+	dom.tileWidth = qs(".txinput");
+	dom.tileHeight = qs(".tyinput");
+	dom.source = qs(".src");
+	dom.appliedFilters = qs(".applied-filters");
+	dom.filterStack = qs(".filter-stack");
+	dom.distribution = qs(".distributioninput");
+	dom.generate = qs(".genb");
+	dom.maskTileSize = qs(".mask-tiles__value");
+	dom.saturation = qs(".saturationInput");
+	dom.contrast = qs(".contrastInput");
+	dom.brightness = qs(".brightnessInput");
+	dom.download = qs(".downloadb");
+	dom.droppedImage = qs(".dropped-image__container");
+
 	const fire = tools.debounce(() => {
-		genb.click();
+		dom.generate.click();
 	}, 200);
 
-	controlsEl.addEventListener("mouseleave", e => {
-		controlsEl.classList.add("hideable");
+	dom.controls.addEventListener("mouseleave", e => {
+		dom.controls.classList.add("hideable");
 	});
 
-	downloadButton.addEventListener("click", async () => {
+	dom.download.addEventListener("click", async () => {
 		const blob = await new Promise((resolve, reject) => {
 			try {
 				canvas.toBlob(
@@ -92,13 +99,13 @@ async function main() {
 	});
 
 	[
-		winput,
-		hinput,
-		zinput,
-		txinput,
-		tyinput,
-		distributionInput,
-		maskTileSizeInput,
+		dom.width,
+		dom.height,
+		dom.scale,
+		dom.tileWidth,
+		dom.tileHeight,
+		dom.distribution,
+		dom.maskTileSize,
 	].forEach(e => {
 		e.addEventListener("keydown", e => {
 			if (e.which === 71) e.preventDefault();
@@ -117,22 +124,22 @@ async function main() {
 		const opt = document.createElement("option");
 		opt.value = src;
 		opt.innerText = src.substr(src.lastIndexOf("/") + 1);
-		sel.appendChild(opt);
+		dom.source.appendChild(opt);
 	});
 
 	let droppedImage;
 	let selectedImage = await readImage(
-		sel.options[sel.selectedIndex].value
+		dom.source.options[dom.source.selectedIndex].value
 	).catch(e => {
 		throw e;
 	});
 
-	sel.addEventListener("change", async () => {
-		selectedImage = await readImage(sel.options[sel.selectedIndex].value).catch(
-			e => {
-				throw e;
-			}
-		);
+	dom.source.addEventListener("change", async () => {
+		selectedImage = await readImage(
+			dom.source.options[dom.source.selectedIndex].value
+		).catch(e => {
+			throw e;
+		});
 	});
 
 	document.body.addEventListener("dragover", e => {
@@ -152,8 +159,8 @@ async function main() {
 			droppedImageEl.removeChild(el);
 			droppedImage = null;
 		});
-		droppedImageEl.innerHTML = "";
-		droppedImageEl.appendChild(el);
+		dom.droppedImage.innerHTML = "";
+		dom.droppedImage.appendChild(el);
 	});
 
 	Object.keys(filters).forEach(filter => {
@@ -165,35 +172,37 @@ async function main() {
 			el.innerText = opt.innerText;
 			el.classList.add("filter-item");
 			el.addEventListener("click", e => {
-				appliedFilters.removeChild(el);
+				dom.appliedFilters.removeChild(el);
 			});
-			appliedFilters.appendChild(el);
+			dom.appliedFilters.appendChild(el);
 		});
-		filterStack.appendChild(opt);
+		dom.filterStack.appendChild(opt);
 	});
 
-	genb.addEventListener("click", async e => {
+	dom.generate.addEventListener("click", async e => {
 		const max = 20000;
 		canvas.width = Math.min(
-			parseInt(winput.value, 10) || window.innerWidth,
+			parseInt(dom.width.value, 10) || window.innerWidth,
 			max
 		);
 		canvas.height = Math.min(
-			parseInt(hinput.value, 10) || window.innerHeight,
+			parseInt(dom.height.value, 10) || window.innerHeight,
 			max
 		);
 		const image = droppedImage || selectedImage;
 		const tileX =
-			Math.min(parseInt(txinput.value, 10), image.width) || canvas.width / 8;
+			Math.min(parseInt(dom.tileWidth.value, 10), image.width) ||
+			canvas.width / 8;
 		const tileY =
-			Math.min(parseInt(tyinput.value, 10), image.width) || canvas.width / 8;
-		const maskTileSize = parseInt(maskTileSizeInput.value, 10) || 0;
-		const distribution = parseInt(distributionInput.value, 10);
-		const scale = 1 / (parseFloat(zinput.value) || 1);
-		const saturation = parseFloat(saturationInput.value) || 0;
-		const contrast = parseFloat(contrastInput.value) || 0;
-		const brightness = parseFloat(brightnessInput.value) || 0;
-		const appliedEffects = Array.from(appliedFilters.childNodes)
+			Math.min(parseInt(dom.tileHeight.value, 10), image.width) ||
+			canvas.width / 8;
+		const maskTileSize = parseInt(dom.maskTileSize.value, 10) || 0;
+		const distribution = parseInt(dom.distribution.value, 10);
+		const scale = 1 / (parseFloat(dom.scale.value) || 1);
+		const saturation = parseFloat(dom.saturation.value) || 0;
+		const contrast = parseFloat(dom.contrast.value) || 0;
+		const brightness = parseFloat(dom.brightness.value) || 0;
+		const appliedEffects = Array.from(dom.appliedFilters.childNodes)
 			.map(x => x.innerText)
 			.map(x => filters[x]);
 
@@ -228,7 +237,7 @@ async function main() {
 		});
 	});
 
-	genb.click();
+	dom.generate.click();
 }
 
 main().catch(e => console.error(e));
