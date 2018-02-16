@@ -156,7 +156,7 @@ async function main() {
 		const el = document.createElement("span");
 		el.innerText = `Uploaded image: ${name}`;
 		el.addEventListener("click", () => {
-			droppedImageEl.removeChild(el);
+			dom.droppedImage.removeChild(el);
 			droppedImage = null;
 		});
 		dom.droppedImage.innerHTML = "";
@@ -179,6 +179,27 @@ async function main() {
 		dom.filterStack.appendChild(opt);
 	});
 
+	const getPrefs = () => {
+		const p = {};
+		p.image = droppedImage || selectedImage;
+		p.tileX =
+			Math.min(parseInt(dom.tileWidth.value, 10), p.image.width) ||
+			canvas.width / 8;
+		p.tileY =
+			Math.min(parseInt(dom.tileHeight.value, 10), p.image.width) ||
+			canvas.width / 8;
+		p.maskTileSize = parseInt(dom.maskTileSize.value, 10) || 0;
+		p.distribution = parseInt(dom.distribution.value, 10);
+		p.scale = 1 / (parseFloat(dom.scale.value) || 1);
+		p.saturation = parseFloat(dom.saturation.value) || 0;
+		p.contrast = parseFloat(dom.contrast.value) || 0;
+		p.brightness = parseFloat(dom.brightness.value) || 0;
+		p.appliedEffects = Array.from(dom.appliedFilters.childNodes)
+			.map(x => x.innerText)
+			.map(x => filters[x]);
+		return p;
+	};
+
 	dom.generate.addEventListener("click", async e => {
 		const max = 20000;
 		canvas.width = Math.min(
@@ -189,51 +210,41 @@ async function main() {
 			parseInt(dom.height.value, 10) || window.innerHeight,
 			max
 		);
-		const image = droppedImage || selectedImage;
-		const tileX =
-			Math.min(parseInt(dom.tileWidth.value, 10), image.width) ||
-			canvas.width / 8;
-		const tileY =
-			Math.min(parseInt(dom.tileHeight.value, 10), image.width) ||
-			canvas.width / 8;
-		const maskTileSize = parseInt(dom.maskTileSize.value, 10) || 0;
-		const distribution = parseInt(dom.distribution.value, 10);
-		const scale = 1 / (parseFloat(dom.scale.value) || 1);
-		const saturation = parseFloat(dom.saturation.value) || 0;
-		const contrast = parseFloat(dom.contrast.value) || 0;
-		const brightness = parseFloat(dom.brightness.value) || 0;
-		const appliedEffects = Array.from(dom.appliedFilters.childNodes)
-			.map(x => x.innerText)
-			.map(x => filters[x]);
+		const prefs = getPrefs();
 
-		let texture = c.createTexture(image);
+		let texture = c.createTexture(prefs.image);
 		texture = await c.tile(texture, {
-			scale: scale,
-			srcWidth: tileX,
-			srcHeight: tileY,
-			dstWidth: canvas.width + distribution * 2,
-			dstHeight: canvas.height + distribution * 2,
+			scale: prefs.scale,
+			srcWidth: prefs.tileX,
+			srcHeight: prefs.tileY,
+			dstWidth: canvas.width + prefs.distribution * 2,
+			dstHeight: canvas.height + prefs.distribution * 2,
 		});
-		if (maskTileSize > 0) {
+		if (prefs.maskTileSize > 0) {
 			texture = c.maskTiles(
 				texture,
-				tileX * scale,
-				tileY * scale,
-				maskTileSize
+				prefs.tileX * prefs.scale,
+				prefs.tileY * prefs.scale,
+				prefs.maskTileSize
 			);
 		}
-		if (distribution > 0) {
-			texture = c.diffuse(texture, distribution);
+		if (prefs.distribution > 0) {
+			texture = c.diffuse(texture, prefs.distribution);
 		}
-		if (appliedEffects.length > 0) {
-			texture = c.applyEffects(texture, appliedEffects);
+		if (prefs.appliedEffects.length > 0) {
+			texture = c.applyEffects(texture, prefs.appliedEffects);
 		}
-		if (saturation || brightness || contrast) {
-			texture = c.adjust(texture, saturation, contrast, brightness);
+		if (prefs.saturation || prefs.brightness || prefs.contrast) {
+			texture = c.adjust(
+				texture,
+				prefs.saturation,
+				prefs.contrast,
+				prefs.brightness
+			);
 		}
 		c.render(texture, {
-			srcX: distribution,
-			srcY: -distribution,
+			srcX: prefs.distribution,
+			srcY: -prefs.distribution,
 		});
 	});
 
