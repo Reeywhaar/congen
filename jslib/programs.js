@@ -161,14 +161,14 @@ export const antitile = `
 		vec4 color = texture2D(u_texture, v_texCoord);
 
 		if(u_direction == 0){
-			float rem = mod(point.x, u_tile.x);
+			float rem = mod(point.x + 1.0, u_tile.x);
 			if(point.x > u_tile.z && rem <= u_tile.z){
 				vec2 coord = v_texCoord + vec2(-(rem * 2.0), 0) * onePixel;
 				color = mix(color, texture2D(u_texture, coord), 1.0 - rem / u_tile.z);
 			}
 		} else {
 			float revY = u_textureSize.y - point.y;
-			float rem = mod(revY, u_tile.y);
+			float rem = mod(revY + 1.0, u_tile.y);
 			if(revY > u_tile.z && rem <= u_tile.z){
 				vec2 coord = v_texCoord + vec2(0, (rem * 2.0)) * onePixel;
 				color = mix(color, texture2D(u_texture, coord), 1.0 - rem / u_tile.z);
