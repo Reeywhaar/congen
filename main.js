@@ -39,8 +39,6 @@ async function main() {
 	);
 	const images = await getImages();
 
-	let droppedImage;
-
 	const controlsEl = document.querySelector(".controls");
 	const winput = document.querySelector(".winput");
 	const hinput = document.querySelector(".hinput");
@@ -117,8 +115,24 @@ async function main() {
 
 	images.forEach(src => {
 		const opt = document.createElement("option");
-		opt.innerText = src;
+		opt.value = src;
+		opt.innerText = src.substr(src.lastIndexOf("/") + 1);
 		sel.appendChild(opt);
+	});
+
+	let droppedImage;
+	let selectedImage = await readImage(
+		sel.options[sel.selectedIndex].value
+	).catch(e => {
+		throw e;
+	});
+
+	sel.addEventListener("change", async () => {
+		selectedImage = await readImage(sel.options[sel.selectedIndex].value).catch(
+			e => {
+				throw e;
+			}
+		);
 	});
 
 	document.body.addEventListener("dragover", e => {
@@ -168,11 +182,7 @@ async function main() {
 			parseInt(hinput.value, 10) || window.innerHeight,
 			max
 		);
-		const image =
-			droppedImage ||
-			(await readImage(sel.options[sel.selectedIndex].text).catch(e => {
-				throw e;
-			}));
+		const image = droppedImage || selectedImage;
 		const tileX =
 			Math.min(parseInt(txinput.value, 10), image.width) || canvas.width / 8;
 		const tileY =
