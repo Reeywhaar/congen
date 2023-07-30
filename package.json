@@ -17,9 +17,11 @@
   "license": "ISC",
   "dependencies": {
     "@reeywhaar/iterator": "^0.4.0",
+    "seedrandom": "^3.0.5",
     "twgl.js": "^4.4.0"
   },
   "devDependencies": {
+    "@types/seedrandom": "^3.0.5",
     "copy-webpack-plugin": "^11.0.0",
     "html-webpack-plugin": "^5.5.3",
     "ts-loader": "^9.4.4",

@@ -2,17 +2,14 @@ import * as tools from "./tools";
 import { C } from "./ctools";
 import * as filters from "./filters";
 import images from "./list";
+import { alea } from "seedrandom";
 
 async function main() {
   const canvas = document.querySelector("canvas")!;
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
-  const c = new C(
-    canvas.getContext("webgl", {
-      preserveDrawingBuffer:
-        location.search.indexOf("nopreserve") > -1 ? false : true,
-    })!
-  );
+  let seed = Math.random();
+
 
   const qs = <T extends Element = Element>(x: string) => {
     const el = document.querySelector(x);
@@ -186,6 +183,8 @@ async function main() {
   };
 
   dom.generate.addEventListener("click", async e => {
+    ++seed;
+
     const max = 20000;
     canvas.width = Math.min(
       parseInt(dom.width.value, 10) || window.innerWidth,
@@ -196,6 +195,14 @@ async function main() {
       max
     );
     const prefs = getPrefs();
+
+    const c = new C(
+      canvas.getContext("webgl", {
+        preserveDrawingBuffer:
+          location.search.indexOf("nopreserve") > -1 ? false : true,
+      })!,
+      alea(String(seed)),
+    );
 
     let texture = await c.tile(c.createTexture(prefs.image), {
       scale: prefs.scale,

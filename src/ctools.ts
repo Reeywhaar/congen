@@ -3,8 +3,10 @@ import { gmap, pipe, randomInt, range, sleep } from "./tools";
 import Gen from "@reeywhaar/iterator";
 import Texture from "./texture";
 import * as programs from "./programs";
+import { alea, PRNG } from "seedrandom"
 
 export class C {
+  rng: PRNG
   ctx: WebGLRenderingContext
   programSource: string = ""
   program: WebGLProgram | null = null
@@ -13,7 +15,8 @@ export class C {
   texCoordBuffer: WebGLBuffer | null = null
   positionBuffer: WebGLBuffer | null = null
 
-  constructor(ctx: WebGLRenderingContext) {
+  constructor(ctx: WebGLRenderingContext, rng: PRNG) {
+    this.rng = rng
     this.ctx = ctx;
   }
 
@@ -410,8 +413,8 @@ export class C {
     for (let row of gmap(range(rows), x => x * srcHeight * scale)) {
       for (let col of gmap(range(columns), x => x * srcWidth * scale)) {
         this.drawTexture(texture, {
-          srcX: randomInt(0, texture.width - srcWidth),
-          srcY: randomInt(0, texture.height - srcHeight),
+          srcX: randomInt(0, texture.width - srcWidth, this.rng),
+          srcY: randomInt(0, texture.height - srcHeight, this.rng),
           srcWidth: srcWidth,
           srcHeight: srcHeight,
           dstX: col,
@@ -419,8 +422,8 @@ export class C {
           dstWidth,
           dstHeight,
           scale,
-          flipY: randomInt(0, 1) ? true : false,
-          flipX: randomInt(0, 1) ? true : false,
+          flipY: randomInt(0, 1, this.rng) ? true : false,
+          flipX: randomInt(0, 1, this.rng) ? true : false,
         });
       }
       await sleep(0);
@@ -515,10 +518,10 @@ export class C {
         type: "1fv",
         value: Gen.range(8)
           .subSplit(function* (_i) {
-            yield randomInt(0, distribution / 2);
-            yield randomInt(0, distribution / 2);
-            yield randomInt(10, distribution);
-            yield randomInt(10, distribution);
+            yield randomInt(0, distribution / 2, this.rng);
+            yield randomInt(0, distribution / 2, this.rng);
+            yield randomInt(10, distribution, this.rng);
+            yield randomInt(10, distribution, this.rng);
           })
           .toArray(),
       },

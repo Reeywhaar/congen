@@ -1,3 +1,5 @@
+import { PRNG } from "seedrandom";
+
 export function debounce<T extends (...args: any[]) => any>(func: T, wait: number, immediate: boolean = false): (...args: Parameters<T>) => void {
   var timeout: ReturnType<typeof setTimeout> | null = null;
   return function () {
@@ -14,8 +16,9 @@ export function debounce<T extends (...args: any[]) => any>(func: T, wait: numbe
   };
 }
 
-export function randomInt(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+export function randomInt(min: number, max: number, rng?: PRNG) {
+  const rand = rng ? rng() : Math.random();
+  return Math.floor(rand * (max - min + 1)) + min;
 }
 
 export function* counter() {
