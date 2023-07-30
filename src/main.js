@@ -95,6 +95,10 @@ async function main() {
     if (e.which === 71) fire();
   });
 
+  window.addEventListener("resize", tools.debounce(e => {
+    fire()
+  }, 200))
+
   images.forEach(src => {
     const opt = document.createElement("option");
     opt.value = src;
