@@ -4,40 +4,41 @@ import * as filters from "./filters";
 import images from "./list";
 
 async function main() {
-  const canvas = document.querySelector("canvas");
+  const canvas = document.querySelector("canvas")!;
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   const c = new C(
     canvas.getContext("webgl", {
       preserveDrawingBuffer:
         location.search.indexOf("nopreserve") > -1 ? false : true,
-    })
+    })!
   );
 
-  const qs = x => {
+  const qs = <T extends Element = Element>(x: string) => {
     const el = document.querySelector(x);
     if (!el) throw new Error("el is null");
-    return el;
+    return el as T;
   };
 
-  const dom = {};
-  dom.controls = qs(".controls");
-  dom.width = qs(".winput");
-  dom.height = qs(".hinput");
-  dom.scale = qs(".zinput");
-  dom.tileWidth = qs(".txinput");
-  dom.tileHeight = qs(".tyinput");
-  dom.source = qs(".src");
-  dom.appliedFilters = qs(".applied-filters");
-  dom.filterStack = qs(".filter-stack");
-  dom.distribution = qs(".distributioninput");
-  dom.generate = qs(".genb");
-  dom.maskTileSize = qs(".mask-tiles__value");
-  dom.saturation = qs(".saturationInput");
-  dom.contrast = qs(".contrastInput");
-  dom.brightness = qs(".brightnessInput");
-  dom.download = qs(".downloadb");
-  dom.droppedImage = qs(".dropped-image__container");
+  const dom = {
+    controls: qs<HTMLDivElement>(".controls"),
+    width: qs<HTMLInputElement>(".winput"),
+    height: qs<HTMLInputElement>(".hinput"),
+    scale: qs<HTMLInputElement>(".zinput"),
+    tileWidth: qs<HTMLInputElement>(".txinput"),
+    tileHeight: qs<HTMLInputElement>(".tyinput"),
+    source: qs<HTMLSelectElement>(".src"),
+    appliedFilters: qs<HTMLDivElement>(".applied-filters"),
+    filterStack: qs<HTMLDivElement>(".filter-stack"),
+    distribution: qs<HTMLSelectElement>(".distributioninput"),
+    generate: qs<HTMLButtonElement>(".genb"),
+    maskTileSize: qs<HTMLSelectElement>(".mask-tiles__value"),
+    saturation: qs<HTMLSelectElement>(".saturationInput"),
+    contrast: qs<HTMLSelectElement>(".contrastInput"),
+    brightness: qs<HTMLSelectElement>(".brightnessInput"),
+    download: qs<HTMLButtonElement>(".downloadb"),
+    droppedImage: qs<HTMLDivElement>(".dropped-image__container"),
+  };
 
   const fire = tools.debounce(() => {
     dom.generate.click();
@@ -48,11 +49,14 @@ async function main() {
   });
 
   dom.download.addEventListener("click", async () => {
-    const blob = await new Promise((resolve, reject) => {
+    const blob = await new Promise<Blob>((resolve, reject) => {
       try {
         canvas.toBlob(
           result => {
-            if (!result) reject(new Error("No result"));
+            if (!result) {
+              reject(new Error("No result"))
+              return
+            };
             resolve(result);
           },
           "image/jpeg",
@@ -83,8 +87,8 @@ async function main() {
     dom.maskTileSize,
   ].forEach(e => {
     e.addEventListener("keydown", e => {
-      if (e.which === 71) e.preventDefault();
-      if (e.which === 13) {
+      if ((e as any).which === 71) e.preventDefault();
+      if ((e as any).which === 13) {
         fire();
       }
     });
@@ -106,7 +110,7 @@ async function main() {
     dom.source.appendChild(opt);
   });
 
-  let droppedImage;
+  let droppedImage: HTMLImageElement;
   let selectedImage = await readImage(
     dom.source.options[dom.source.selectedIndex].value
   ).catch(e => {
@@ -127,9 +131,10 @@ async function main() {
 
   document.body.addEventListener("drop", async e => {
     e.preventDefault();
-    if (!e.dataTransfer.files[0]) return;
-    const name = e.dataTransfer.files[0].name;
-    const url = URL.createObjectURL(e.dataTransfer.files[0]);
+    const file = e.dataTransfer?.files[0]
+    if (!file) return;
+    const name = file.name;
+    const url = URL.createObjectURL(file);
     droppedImage = await readImage(url);
 
     const el = document.createElement("span");
@@ -159,23 +164,25 @@ async function main() {
   });
 
   const getPrefs = () => {
-    const p = {};
-    p.image = droppedImage || selectedImage;
-    p.tileX =
-      Math.min(parseInt(dom.tileWidth.value, 10), p.image.width) ||
-      canvas.width / 8;
-    p.tileY =
-      Math.min(parseInt(dom.tileHeight.value, 10), p.image.width) ||
-      canvas.width / 8;
-    p.maskTileSize = parseInt(dom.maskTileSize.value, 10) || 0;
-    p.distribution = parseInt(dom.distribution.value, 10);
-    p.scale = 1 / (parseFloat(dom.scale.value) || 1);
-    p.saturation = parseFloat(dom.saturation.value) || 0;
-    p.contrast = parseFloat(dom.contrast.value) || 0;
-    p.brightness = parseFloat(dom.brightness.value) || 0;
-    p.appliedEffects = Array.from(dom.appliedFilters.childNodes)
-      .map(x => x.innerText)
-      .map(x => filters[x]);
+    const image = droppedImage || selectedImage;
+    const p = {
+      image,
+      tileX:
+        Math.min(parseInt(dom.tileWidth.value, 10), image.width) ||
+        canvas.width / 8,
+      tileY:
+        Math.min(parseInt(dom.tileHeight.value, 10), image.width) ||
+        canvas.width / 8,
+      maskTileSize: parseInt(dom.maskTileSize.value, 10) || 0,
+      distribution: parseInt(dom.distribution.value, 10),
+      scale: 1 / (parseFloat(dom.scale.value) || 1),
+      saturation: parseFloat(dom.saturation.value) || 0,
+      contrast: parseFloat(dom.contrast.value) || 0,
+      brightness: parseFloat(dom.brightness.value) || 0,
+      appliedEffects: Array.from(dom.appliedFilters.childNodes)
+        .map(x => (x as HTMLDivElement).innerText)
+        .map(x => filters[x as keyof typeof filters]),
+    };
     return p;
   };
 
@@ -191,8 +198,7 @@ async function main() {
     );
     const prefs = getPrefs();
 
-    let texture = c.createTexture(prefs.image);
-    texture = await c.tile(texture, {
+    let texture = await c.tile(c.createTexture(prefs.image), {
       scale: prefs.scale,
       srcWidth: prefs.tileX,
       srcHeight: prefs.tileY,
@@ -230,8 +236,8 @@ async function main() {
   dom.generate.click();
 }
 
-function readImage(url) {
-  return new Promise((resolve, reject) => {
+function readImage(url: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
     image.addEventListener("load", () => {
       if (image.width === 0 || image.height === 0) {

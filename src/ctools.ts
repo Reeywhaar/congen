@@ -1,15 +1,19 @@
 import * as twgl from "twgl.js";
-import { pipe, randomInt, sleep } from "./tools";
+import { gmap, pipe, randomInt, range, sleep } from "./tools";
 import Gen from "@reeywhaar/iterator";
 import Texture from "./texture";
 import * as programs from "./programs";
 
 export class C {
-  /**
-   * @constructor
-   * @param {WebGLRenderingContext} ctx
-   */
-  constructor(ctx) {
+  ctx: WebGLRenderingContext
+  programSource: string = ""
+  program: WebGLProgram | null = null
+  texCoordLocation: number | null = null
+  positionLocation: number | null = null
+  texCoordBuffer: WebGLBuffer | null = null
+  positionBuffer: WebGLBuffer | null = null
+
+  constructor(ctx: WebGLRenderingContext) {
     this.ctx = ctx;
   }
 
@@ -17,8 +21,8 @@ export class C {
    *
    * @return {WebGLShader}
    */
-  getShader(type, source) {
-    const shader = this.ctx.createShader(type);
+  getShader(type: number, source: string) {
+    const shader = this.ctx.createShader(type)!;
     this.ctx.shaderSource(shader, source);
     this.ctx.compileShader(shader);
 
@@ -36,7 +40,7 @@ export class C {
    *
    * @return {WebGLProgram}
    */
-  getProgram(vertextShaderSource, fragmentShaderSource) {
+  getProgram(vertextShaderSource: string, fragmentShaderSource: string) {
     const vertexShader = this.getShader(
       this.ctx.VERTEX_SHADER,
       vertextShaderSource
@@ -46,7 +50,7 @@ export class C {
       fragmentShaderSource
     );
 
-    const shaderProgram = this.ctx.createProgram();
+    const shaderProgram = this.ctx.createProgram()!;
     this.ctx.attachShader(shaderProgram, vertexShader);
     this.ctx.attachShader(shaderProgram, fragmentShader);
     this.ctx.linkProgram(shaderProgram);
@@ -61,10 +65,10 @@ export class C {
     return shaderProgram;
   }
 
-  setProgram(programSource) {
+  setProgram(programSource: string) {
     if (this.programSource === programSource) return;
     this.programSource = programSource;
-    const program = this.getProgram(...this.programSource.split("//SPLIT"));
+    const program = this.getProgram(...this.programSource.split("//SPLIT") as [string, string]);
 
     this.program = program;
 
@@ -88,7 +92,7 @@ export class C {
         this.ctx.STATIC_DRAW
       );
 
-    const fillAttribPointer = loc =>
+    const fillAttribPointer = (loc: number) =>
       this.ctx.vertexAttribPointer(loc, 2, this.ctx.FLOAT, false, 0, 0);
 
     this.texCoordBuffer = this.ctx.createBuffer();
@@ -110,8 +114,8 @@ export class C {
    * @param {HTMLImageElement} image
    * @return Texture
    */
-  createTexture(image) {
-    const texture = this.ctx.createTexture();
+  createTexture(image?: HTMLImageElement) {
+    const texture = this.ctx.createTexture()!;
     this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture);
 
     this.ctx.texParameteri(
@@ -148,13 +152,9 @@ export class C {
       return new Texture(texture, image.width, image.height);
     }
 
-    return new Texture(texture, null, null);
+    return new Texture(texture, 0, 0);
   }
 
-  /**
-   * @param {HTMLImageElement} image
-   * @return [WebGLFramebuffer, Texture]
-   */
   createFramebufferAndTexture(
     width = this.ctx.canvas.width,
     height = this.ctx.canvas.height
@@ -186,7 +186,7 @@ export class C {
     ) {
       throw new Error("Output framebuffer not complete");
     }
-    return [fb, new Texture(fbtext.texture, width, height)];
+    return [fb, new Texture(fbtext.texture, width, height)] as const;
   }
 
   clear(width = this.ctx.canvas.width, height = this.ctx.canvas.height) {
@@ -195,11 +195,8 @@ export class C {
     this.ctx.clear(this.ctx.COLOR_BUFFER_BIT);
   }
 
-  /**
-   * @param {WebGLFramebuffer} framebuffer
-   */
   setFramebuffer(
-    framebuffer,
+    framebuffer: WebGLFramebuffer,
     width = this.ctx.canvas.width,
     height = this.ctx.canvas.height
   ) {
@@ -212,31 +209,26 @@ export class C {
    * @param {string} type
    * @param {Number|array} value
    */
-  setUniform(key, type, value) {
-    const loc = this.ctx.getUniformLocation(this.program, `u_${key}`);
+  setUniform(key: string, type: string, value: any) {
+    const loc = this.ctx.getUniformLocation(this.program!, `u_${key}`);
     if (loc === null) throw new Error(`unable to get Location "u_${key}"`);
     if (type.charAt(type.length - 1) === "v") {
       if (type.indexOf("Matrix") === 0) {
-        this.ctx[`uniform${type}`](loc, false, value);
+        (this.ctx as any)[`uniform${type}`](loc, false, value);
         return;
       }
 
-      this.ctx[`uniform${type}`](loc, value);
+      (this.ctx as any)[`uniform${type}`](loc, value);
       return;
     }
     if (!Array.isArray(value)) {
-      this.ctx[`uniform${type}`](loc, value);
+      (this.ctx as any)[`uniform${type}`](loc, value);
       return;
     }
-    this.ctx[`uniform${type}`](loc, ...value);
+    (this.ctx as any)[`uniform${type}`](loc, ...value);
   }
 
-  /**
-   * @param {Texture} texture
-   * @param {string} program
-   * @returns Texture
-   */
-  applyProgram(texture, program, uniforms = []) {
+  applyProgram(texture: { width: number, height: number, texture: WebGLTexture }, program: string, uniforms: { key: string, type: string, value: any }[] = []) {
     this.setProgram(program);
 
     const defaultUniforms = [
@@ -280,23 +272,20 @@ export class C {
     return fbtext;
   }
 
-  /**
-   * @param {Texture} texture
-   */
   drawTexture(
-    texture,
+    texture: Texture,
     {
-      srcX: srcX = 0,
-      srcY: srcY = 0,
-      srcWidth: srcWidth = texture.width,
-      srcHeight: srcHeight = texture.height,
-      dstX: dstX = 0,
-      dstY: dstY = 0,
-      dstWidth: dstWidth = this.ctx.canvas.width,
-      dstHeight: dstHeight = this.ctx.canvas.height,
-      scale: scale = 1,
-      flipY: flipY = false,
-      flipX: flipX = false,
+      srcX = 0,
+      srcY = 0,
+      srcWidth = texture.width,
+      srcHeight = texture.height,
+      dstX = 0,
+      dstY = 0,
+      dstWidth = this.ctx.canvas.width,
+      dstHeight = this.ctx.canvas.height,
+      scale = 1,
+      flipY = false,
+      flipX = false,
     } = {}
   ) {
     if (!texture.width) throw new Error("textureWidth required");
@@ -306,8 +295,8 @@ export class C {
 
     this.setProgram(programs.draw);
 
-    const guf = pointer => {
-      const loc = this.ctx.getUniformLocation(this.program, pointer);
+    const guf = (pointer: string) => {
+      const loc = this.ctx.getUniformLocation(this.program!, pointer);
       if (loc === null) throw new Error("unable to set Location");
       return loc;
     };
@@ -361,23 +350,20 @@ export class C {
     this.ctx.drawArrays(this.ctx.TRIANGLES, 0, 6);
   }
 
-  /**
-   * @param {HTMLImageElement} image
-   */
   drawImage(
-    image,
+    image: HTMLImageElement,
     {
-      srcX: srcX = 0,
-      srcY: srcY = 0,
-      srcWidth: srcWidth = image.width,
-      srcHeight: srcHeight = image.height,
-      dstX: dstX = 0,
-      dstY: dstY = 0,
-      dstWidth: dstWidth = this.ctx.canvas.width,
-      dstHeight: dstHeight = this.ctx.canvas.height,
-      scale: scale = 1,
-      flipY: flipY = false,
-      flipX: flipX = false,
+      srcX = 0,
+      srcY = 0,
+      srcWidth = image.width,
+      srcHeight = image.height,
+      dstX = 0,
+      dstY = 0,
+      dstWidth = this.ctx.canvas.width,
+      dstHeight = this.ctx.canvas.height,
+      scale = 1,
+      flipY = false,
+      flipX = false,
     } = {}
   ) {
     if (!srcWidth) srcWidth = image.width;
@@ -403,7 +389,7 @@ export class C {
    * @returns Texture
    */
   async tile(
-    texture,
+    texture: Texture,
     {
       srcWidth: srcWidth = texture.width,
       srcHeight: srcHeight = texture.height,
@@ -421,8 +407,8 @@ export class C {
     let [fb, fbtext] = this.createFramebufferAndTexture(dstWidth, dstHeight);
     this.setFramebuffer(fb, dstWidth, dstHeight);
 
-    for (let row of Gen.range(rows).map(x => x * srcHeight * scale)) {
-      for (let col of Gen.range(columns).map(x => x * srcWidth * scale)) {
+    for (let row of gmap(range(rows), x => x * srcHeight * scale)) {
+      for (let col of gmap(range(columns), x => x * srcWidth * scale)) {
         this.drawTexture(texture, {
           srcX: randomInt(0, texture.width - srcWidth),
           srcY: randomInt(0, texture.height - srcHeight),
@@ -448,18 +434,18 @@ export class C {
    * @param {array} effects
    * @returns Texture
    */
-  applyEffects(texture, effects = []) {
+  applyEffects(texture: Texture, effects: Float32Array[] = []) {
     if (effects.length < 1) return texture;
 
     this.setProgram(programs.effects);
 
-    const getKernelWeight = kernel => {
+    const getKernelWeight = (kernel: Float32Array) => {
       const weight = kernel.reduce((c, x) => c + x);
       return weight <= 0 ? 1 : weight;
     };
 
-    const guf = pointer => {
-      const loc = this.ctx.getUniformLocation(this.program, pointer);
+    const guf = (pointer: string) => {
+      const loc = this.ctx.getUniformLocation(this.program!, pointer);
       if (loc === null) throw new Error(`unable to set Location "${pointer}"`);
       return loc;
     };
@@ -492,7 +478,7 @@ export class C {
 
     this.ctx.bindTexture(this.ctx.TEXTURE_2D, texture.texture);
 
-    for (let [index, effect] of Gen.fromArray(effects).enumerate()) {
+    for (let [index, effect] of effects.entries()) {
       this.setFramebuffer(fb[index % 2][0], texture.width, texture.height);
 
       this.ctx.uniform1fv(kernelLocation, effect);
@@ -506,6 +492,8 @@ export class C {
           texture.height
         );
     }
+
+    throw new Error("Unexpected return");
   }
 
   /**
@@ -515,7 +503,7 @@ export class C {
    *
    * @returns Texture
    */
-  diffuse(texture, distribution = 120) {
+  diffuse(texture: Texture, distribution = 120) {
     return this.applyProgram(texture, programs.diffuse, [
       {
         key: "distributionSize",
@@ -526,7 +514,7 @@ export class C {
         key: "distribution",
         type: "1fv",
         value: Gen.range(8)
-          .subSplit(function* (i) {
+          .subSplit(function* (_i) {
             yield randomInt(0, distribution / 2);
             yield randomInt(0, distribution / 2);
             yield randomInt(10, distribution);
@@ -537,15 +525,7 @@ export class C {
     ]);
   }
 
-  /**
-   * @param {Texture} texture
-   * @param {Number} saturation
-   * @param {Number} brightness
-   * @param {Number} contrast
-   *
-   * @returns Texture
-   */
-  adjust(texture, saturation = 0, contrast = 0, brightness = 0) {
+  adjust(texture: Texture, saturation = 0, contrast = 0, brightness = 0) {
     return this.applyProgram(texture, programs.adjust, [
       {
         key: "saturation",
@@ -565,14 +545,7 @@ export class C {
     ]);
   }
 
-  /**
-   * @param {Texture} texture
-   * @param {Number} x
-   * @param {Number} y
-   * @param {Number} size
-   * @returns Texture
-   */
-  maskTiles(texture, x, y, size = 20) {
+  maskTiles(texture: Texture, x: number, y: number, size = 20) {
     return pipe(
       this.applyProgram(texture, programs.antitile, [
         {
@@ -603,13 +576,12 @@ export class C {
   }
 
   render(
-    texture,
+    texture: Texture,
     {
-      srcX: srcX = 0,
-      srcY: srcY = 0,
-      srcWidth: srcWidth = texture.width,
-      srcHeight: srcHeight = texture.height,
-      flipY: flipY = false,
+      srcX = 0,
+      srcY = 0,
+      srcWidth = texture.width,
+      srcHeight = texture.height,
     } = {}
   ) {
     this.setFramebuffer(null, this.ctx.canvas.width, this.ctx.canvas.height);
