@@ -106,6 +106,8 @@ async function main() {
     selectedImage = await readImage(
       dom.source.options[dom.source.selectedIndex].value
     );
+    dom.droppedImage.innerHTML = "";
+    droppedImage = null;
     fire();
   });
 
@@ -126,9 +128,12 @@ async function main() {
     el.addEventListener("click", () => {
       dom.droppedImage.removeChild(el);
       droppedImage = null;
+      fire();
     });
     dom.droppedImage.innerHTML = "";
     dom.droppedImage.appendChild(el);
+
+    fire();
   });
 
   Object.keys(filters).forEach(filter => {
