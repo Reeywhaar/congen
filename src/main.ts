@@ -19,8 +19,6 @@ async function main() {
 
   const dom = {
     controls: qs<HTMLDivElement>(".controls"),
-    width: qs<HTMLInputElement>(".winput"),
-    height: qs<HTMLInputElement>(".hinput"),
     scale: qs<HTMLInputElement>(".zinput"),
     tileWidth: qs<HTMLInputElement>(".txinput"),
     tileHeight: qs<HTMLInputElement>(".tyinput"),
@@ -37,27 +35,21 @@ async function main() {
   };
 
   const fire = tools.debounce(() => {
-    dom.generate.click();
+    generate(canvas, window.innerWidth, window.innerHeight)
   }, 200);
 
   dom.download.addEventListener("click", async () => {
-    const blob = await new Promise<Blob>((resolve, reject) => {
-      try {
-        canvas.toBlob(
-          result => {
-            if (!result) {
-              reject(new Error("No result"))
-              return
-            };
-            resolve(result);
-          },
-          "image/jpeg",
-          0.9
-        );
-      } catch (e) {
-        reject(e);
-      }
-    });
+    const ocanvas = new OffscreenCanvas(100, 100)
+    const width = parseFloat(prompt("Width (default is screen size)", String(canvas.width)))
+    if (!width) return
+    const height = parseFloat(prompt("Height (default is screen size)", String(canvas.height)))
+    if (!height) return
+
+    await generate(ocanvas, width, height)
+    const blob = await ocanvas.convertToBlob({
+      quality: 0.9,
+      type: "image/jpeg",
+    })
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.download = "congen-texture.jpg";
@@ -70,8 +62,6 @@ async function main() {
   });
 
   [
-    dom.width,
-    dom.height,
     dom.scale,
     dom.tileWidth,
     dom.tileHeight,
@@ -182,16 +172,14 @@ async function main() {
     return p;
   };
 
-  dom.generate.addEventListener("click", async e => {
-    ++seed;
-
+  const generate = async (canvas: HTMLCanvasElement | OffscreenCanvas, width: number, height: number) => {
     const max = 20000;
     canvas.width = Math.min(
-      parseInt(dom.width.value, 10) || window.innerWidth,
+      width,
       max
     );
     canvas.height = Math.min(
-      parseInt(dom.height.value, 10) || window.innerHeight,
+      height,
       max
     );
     const prefs = getPrefs();
@@ -237,6 +225,11 @@ async function main() {
       srcX: prefs.distribution,
       srcY: -prefs.distribution,
     });
+  }
+
+  dom.generate.addEventListener("click", async e => {
+    ++seed;
+    generate(canvas, window.innerWidth, window.innerHeight)
   });
 
   dom.generate.click();
