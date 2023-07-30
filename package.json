@@ -4,13 +4,26 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "serve": "webpack serve",
+    "build": "webpack",
+    "build:watch": "webpack --watch",
+    "build:production": "NODE_ENV=production webpack",
+    "deploy": "rsync -arvuzn --delete ./ webmachine:/var/sites/vyrtsev.com/www/static/congen/ --exclude .git --exclude makefile --exclude .DS_Store --exclude .gitignore --exclude package.json --exclude package-lock.json"
   },
+  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@reeywhaar/iterator": "^0.4.0",
     "twgl.js": "^4.4.0"
+  },
+  "devDependencies": {
+    "copy-webpack-plugin": "^11.0.0",
+    "html-webpack-plugin": "^5.5.3",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
   }
 }

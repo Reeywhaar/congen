@@ -1,160 +1,169 @@
 <html lang="en">
+
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta http-equiv="X-UA-Compatible" content="ie=edge">
-	<meta name="keywords" content="webgl, canvas, texture generator, canvas generator, paper texture, concrete texture">
-	<meta name="author" content="Misha Vyrtsev">
-	<title>Vyrtsev Texture Generator</title>
-	<script defer src="./node_modules/twgl.js/dist/4.x/twgl-full.js"></script>
-	<script defer src="./main.js" type="module"></script>
-	<style>
-		html{
-			font-family: sans-serif;
-		}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="keywords" content="webgl, canvas, texture generator, canvas generator, paper texture, concrete texture">
+  <meta name="author" content="Misha Vyrtsev">
+  <link rel="icon" type="image/png" href="./favicon.png" />
+  <title>Vyrtsev Texture Generator</title>
+  <style>
+    html {
+      font-family: sans-serif;
+    }
 
-		html,body {
-			padding: 0;
-			margin: 0;
-		}
+    html,
+    body {
+      padding: 0;
+      margin: 0;
+    }
 
-		body {
-			background: rgb(127,127,127);
-		}
+    body {
+      background: rgb(127, 127, 127);
+    }
 
-		input[type="number"]{
-			display: block;
-			width: 100%;
-		}
+    input[type="number"] {
+      display: block;
+      width: 100%;
+    }
 
-		.hideable{
-			transition: opacity .0s;
-		}
+    .hideable {
+      transition: opacity .0s;
+    }
 
-		.hideable:not(:hover){
-			transition: opacity 1s;
-			opacity: .1;
-		}
+    .hideable:not(:hover) {
+      transition: opacity 1s;
+      opacity: .1;
+    }
 
-		.controls {
-			position: fixed;
-			display: flex;
-			flex-direction: column;
-			align-items: stretch;
-			top:2px;
-			right: 2px;
-			padding: 2px;
-			background-color: rgba(255,255,255,.7);
-		}
+    .controls {
+      position: fixed;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      top: 2px;
+      right: 2px;
+      padding: 2px;
+      background-color: rgba(255, 255, 255, .7);
+    }
 
-		.controls__row{
-			padding: 2px;
-			display: grid;
-			grid-template-columns: repeat(2, minmax(min-content, 150px));
-			grid-column-gap: 5px;
-			justify-items: stretch;
-			align-items: center;
-		}
+    .controls__row {
+      padding: 2px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(min-content, 150px));
+      grid-column-gap: 5px;
+      justify-items: stretch;
+      align-items: center;
+    }
 
-		canvas{
-			box-shadow: 0px 0px 4px rgba(0,0,0,.4);
-		}
+    canvas {
+      box-shadow: 0px 0px 4px rgba(0, 0, 0, .4);
+    }
 
-		.filter-stack{
-			font-size: .6em;
-			cursor: default;
-			grid-column: 1 / span 2;
-		}
+    .filter-stack {
+      font-size: .6em;
+      cursor: default;
+      grid-column: 1 / span 2;
+    }
 
-		.applied-filters{
-			grid-row-start: 2;
-			font-size: .6em;
-			color:cadetblue;
-			cursor: default;
-			grid-column: 1 / span 2;
-		}
+    .applied-filters {
+      grid-row-start: 2;
+      font-size: .6em;
+      color: cadetblue;
+      cursor: default;
+      grid-column: 1 / span 2;
+    }
 
-		.filter-item{
-			padding: 2px;
-			display: inline-block;
-		}
+    .filter-item {
+      padding: 2px;
+      display: inline-block;
+    }
 
-		.adjustments{
-			grid-template-columns: minmax(min-content, auto);
-			box-sizing: border-box;
-		}
+    .adjustments {
+      grid-template-columns: minmax(min-content, auto);
+      box-sizing: border-box;
+    }
 
-		.adjustments__input{
-			margin: 0;
-			width: 100%;
-		}
+    .adjustments__input {
+      margin: 0;
+      width: 100%;
+    }
 
-		.medium-grey{
-			height: 40px;
-			background-color: rgb(127,127,127);
-			position: relative;
-			bottom: -2px;
-			left: -2px;
-			width:calc(100% + 4px);
-		}
+    .medium-grey {
+      height: 40px;
+      background-color: rgb(127, 127, 127);
+      position: relative;
+      bottom: -2px;
+      left: -2px;
+      width: calc(100% + 4px);
+    }
 
-		.logo{
-			grid-template-columns: minmax(min-content, auto);
-			text-align: center;
-		}
+    .logo {
+      grid-template-columns: minmax(min-content, auto);
+      text-align: center;
+    }
 
-		.mask-tiles__label{
-			font-size: 70%;
-		}
+    .mask-tiles__label {
+      font-size: 70%;
+    }
 
-		.dropped-image{
-			grid-template-columns: minmax(min-content, 280px);
-			box-sizing: border-box;
-		}
-		.dropped-image__container{
-			cursor: default;
-		}
-	</style>
+    .dropped-image {
+      grid-template-columns: minmax(min-content, 280px);
+      box-sizing: border-box;
+    }
+
+    .dropped-image__container {
+      cursor: default;
+    }
+  </style>
 </head>
+
 <body>
-	<canvas width="0" height="0"></canvas>
-	<div class="controls">
-		<div class="logo controls__row">
-			<a href="//vyrtsev.com"><img src="./horrorse.png"></a>
-		</div>
-		<div class="controls__row">
-			<input class="winput" type="number" placeholder="width" value="0" max="20000" title="Canvas width">
-			<input class="hinput" type="number" placeholder="height" value="0" max="20000" title="Canvas height">
-		</div>
-		<div class="controls__row">
-			<input class="txinput" type="number" placeholder="tile width" value="200" max="3000" title="Tile width">
-			<input class="tyinput" type="number" placeholder="time height" value="160" max="3000" title="Tile height">
-		</div>
-		<div class="controls__row">
-			<input type="number" class="zinput" value="2" min="1" step="0.5" max="10" placeholder="scale" title="Scale">
-			<select class="src"></select>
-		</div>
-		<div class="controls__row">
-			<div class="applied-filters"></div>
-			<div class="filter-stack"></div>
-		</div>
-		<div class="adjustments controls__row">
-			<input type="range" class="adjustments__input saturationInput" step="0.01" value="0" min="-1" max="1" title="Saturation">
-			<input type="range" class="adjustments__input contrastInput" step="0.01" value="0" min="-1" max="1" title="Contrast">
-			<input type="range" class="adjustments__input brightnessInput" step="0.01" value="0" min="-1" max="1" title="Brightness">
-		</div>
-		<div class="controls__row">
-			<input type="number" class="mask-tiles__value" value="45" min="0" step="5" max="300" placeholder="Tile mask size" title="Tile mask size">
-			<input type="number" class="distributioninput" value="0" min="0" max="2000" step="10" placeholder="distribution" title="Diffusion">
-		</div>
-		<div class="dropped-image controls__row">
-			<div class="dropped-image__container"></div>
-		</div>
-		<div class="controls__row">
-			<button class="genb" title="Generate (G)">Generate</button>
-			<button class="downloadb">Download</button>
-		</div>
-		<div class="medium-grey"></div>
-	</div>
+  <canvas width="0" height="0"></canvas>
+  <div class="controls">
+    <div class="logo controls__row">
+      <a href="//vyrtsev.com"><img src="./horrorse.png"></a>
+    </div>
+    <div class="controls__row">
+      <input class="winput" type="number" placeholder="width" value="0" max="20000" title="Canvas width">
+      <input class="hinput" type="number" placeholder="height" value="0" max="20000" title="Canvas height">
+    </div>
+    <div class="controls__row">
+      <input class="txinput" type="number" placeholder="tile width" value="200" max="3000" title="Tile width">
+      <input class="tyinput" type="number" placeholder="time height" value="160" max="3000" title="Tile height">
+    </div>
+    <div class="controls__row">
+      <input type="number" class="zinput" value="2" min="1" step="0.5" max="10" placeholder="scale" title="Scale">
+      <select class="src"></select>
+    </div>
+    <div class="controls__row">
+      <div class="applied-filters"></div>
+      <div class="filter-stack"></div>
+    </div>
+    <div class="adjustments controls__row">
+      <input type="range" class="adjustments__input saturationInput" step="0.01" value="0" min="-1" max="1"
+        title="Saturation">
+      <input type="range" class="adjustments__input contrastInput" step="0.01" value="0" min="-1" max="1"
+        title="Contrast">
+      <input type="range" class="adjustments__input brightnessInput" step="0.01" value="0" min="-1" max="1"
+        title="Brightness">
+    </div>
+    <div class="controls__row">
+      <input type="number" class="mask-tiles__value" value="45" min="0" step="5" max="300" placeholder="Tile mask size"
+        title="Tile mask size">
+      <input type="number" class="distributioninput" value="0" min="0" max="2000" step="10" placeholder="distribution"
+        title="Diffusion">
+    </div>
+    <div class="dropped-image controls__row">
+      <div class="dropped-image__container"></div>
+    </div>
+    <div class="controls__row">
+      <button class="genb" title="Generate (G)">Generate</button>
+      <button class="downloadb">Download</button>
+    </div>
+    <div class="medium-grey"></div>
+  </div>
 </body>
+
 </html>

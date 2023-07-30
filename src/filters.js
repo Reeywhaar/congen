@@ -12,9 +12,9 @@
 // ]);
 // prettier-ignore
 export const gaussianBlur2 = new Float32Array([
-	1, 2, 1,
-	2, 4, 2,
-	1, 2, 1
+  1, 2, 1,
+  2, 4, 2,
+  1, 2, 1
 ]);
 // prettier-ignore
 // export const gaussianBlur3 = new Float32Array([
@@ -24,21 +24,21 @@ export const gaussianBlur2 = new Float32Array([
 // ]);
 // prettier-ignore
 export const sharp1 = new Float32Array([
-	-1, -1, -1,
-	-1, 16, -1,
-	-1, -1, -1
+  -1, -1, -1,
+  -1, 16, -1,
+  -1, -1, -1
 ]);
 // prettier-ignore
 export const sharp2 = new Float32Array([
-	 0, -1,  0,
-	-1,  5, -1,
-	 0, -1,  0
+  0, -1, 0,
+  -1, 5, -1,
+  0, -1, 0
 ]);
 // prettier-ignore
 export const sharp3 = new Float32Array([
-	-1, -1, -1,
-	-1,  9, -1,
-	-1, -1, -1
+  -1, -1, -1,
+  -1, 9, -1,
+  -1, -1, -1
 ]);
 // prettier-ignore
 // export const edgeDetect = new Float32Array([
@@ -102,43 +102,43 @@ export const sharp3 = new Float32Array([
 // ]);
 // prettier-ignore
 export const boxBlur = new Float32Array([
-	0.111, 0.111, 0.111,
-	0.111, 0.111, 0.111,
-	0.111, 0.111, 0.111,
+  0.111, 0.111, 0.111,
+  0.111, 0.111, 0.111,
+  0.111, 0.111, 0.111,
 ]);
 // prettier-ignore
 export const triangleBlur = new Float32Array([
-	0.0625, 0.125, 0.0625,
-	 0.125,  0.25,  0.125,
-	0.0625, 0.125, 0.0625,
+  0.0625, 0.125, 0.0625,
+  0.125, 0.25, 0.125,
+  0.0625, 0.125, 0.0625,
 ]);
 // prettier-ignore
 export const emboss = new Float32Array([
-	-1, -1,  0,
-	-1,  1,  1,
-	 0,  1,  1
+  -1, -1, 0,
+  -1, 1, 1,
+  0, 1, 1
 ]);
 // prettier-ignore
 export const smoothify = new Float32Array([
-	 4, -1,  0,
-	-1,  1, -1,
-	 0, -1,  4
+  4, -1, 0,
+  -1, 1, -1,
+  0, -1, 4
 ]);
 // prettier-ignore
 export const straighten = new Float32Array([
-	  9, -1, -1,
-	 -1,  1,  0,
-	 -1, -1, -1
+  9, -1, -1,
+  -1, 1, 0,
+  -1, -1, -1
 ]);
 // prettier-ignore
 export const straighten2 = new Float32Array([
-	 18, -2, -2,
-	 -2,  2,  0,
-	 -2, -2, -2
+  18, -2, -2,
+  -2, 2, 0,
+  -2, -2, -2
 ]);
 // prettier-ignore
 export const sweaterify = new Float32Array([
-	  -2, 4, -2,
-	 4,  -2,  4,
-	 -2, 4, -2
+  -2, 4, -2,
+  4, -2, 4,
+  -2, 4, -2
 ]);
