@@ -30,7 +30,6 @@ async function main() {
     source: qs<HTMLSelectElement>(".src"),
     appliedFilters: qs<HTMLDivElement>(".applied-filters"),
     filterStack: qs<HTMLDivElement>(".filter-stack"),
-    distribution: qs<HTMLSelectElement>(".distributioninput"),
     generate: qs<HTMLButtonElement>(".genb"),
     maskTileSize: qs<HTMLSelectElement>(".mask-tiles__value"),
     saturation: qs<HTMLSelectElement>(".saturationInput"),
@@ -43,10 +42,6 @@ async function main() {
   const fire = tools.debounce(() => {
     dom.generate.click();
   }, 200);
-
-  dom.controls.addEventListener("mouseleave", e => {
-    dom.controls.classList.add("hideable");
-  });
 
   dom.download.addEventListener("click", async () => {
     const blob = await new Promise<Blob>((resolve, reject) => {
@@ -83,7 +78,6 @@ async function main() {
     dom.scale,
     dom.tileWidth,
     dom.tileHeight,
-    dom.distribution,
     dom.maskTileSize,
   ].forEach(e => {
     e.addEventListener("keydown", e => {
@@ -113,16 +107,19 @@ async function main() {
   let droppedImage: HTMLImageElement;
   let selectedImage = await readImage(
     dom.source.options[dom.source.selectedIndex].value
-  ).catch(e => {
-    throw e;
-  });
+  );
+
+  [dom.brightness, dom.contrast, dom.saturation].forEach(el => {
+    el.addEventListener("change", async () => {
+      fire();
+    });
+  })
 
   dom.source.addEventListener("change", async () => {
     selectedImage = await readImage(
       dom.source.options[dom.source.selectedIndex].value
-    ).catch(e => {
-      throw e;
-    });
+    );
+    fire();
   });
 
   document.body.addEventListener("dragover", e => {
@@ -157,8 +154,10 @@ async function main() {
       el.classList.add("filter-item");
       el.addEventListener("click", e => {
         dom.appliedFilters.removeChild(el);
+        fire();
       });
       dom.appliedFilters.appendChild(el);
+      fire();
     });
     dom.filterStack.appendChild(opt);
   });
@@ -174,8 +173,8 @@ async function main() {
         Math.min(parseInt(dom.tileHeight.value, 10), image.width) ||
         canvas.width / 8,
       maskTileSize: parseInt(dom.maskTileSize.value, 10) || 0,
-      distribution: parseInt(dom.distribution.value, 10),
-      scale: 1 / (parseFloat(dom.scale.value) || 1),
+      distribution: 0,
+      scale: parseFloat(dom.scale.value) || 1,
       saturation: parseFloat(dom.saturation.value) || 0,
       contrast: parseFloat(dom.contrast.value) || 0,
       brightness: parseFloat(dom.brightness.value) || 0,

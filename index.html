@@ -28,15 +28,6 @@
       width: 100%;
     }
 
-    .hideable {
-      transition: opacity .0s;
-    }
-
-    .hideable:not(:hover) {
-      transition: opacity 1s;
-      opacity: .1;
-    }
-
     .controls {
       position: fixed;
       display: flex;
@@ -48,6 +39,12 @@
       background-color: rgba(255, 255, 255, .7);
     }
 
+    .controls__label {
+      margin-top: 9px;
+      padding: 0 2px;
+      font-size: 80%;
+    }
+
     .controls__row {
       padding: 2px;
       display: grid;
@@ -55,6 +52,11 @@
       grid-column-gap: 5px;
       justify-items: stretch;
       align-items: center;
+    }
+
+    .controls__row .controls__label {
+      padding-left: 0;
+      padding-right: 0;
     }
 
     canvas {
@@ -116,6 +118,10 @@
     .dropped-image__container {
       cursor: default;
     }
+
+    .spacer {
+      margin-top: 18px;
+    }
   </style>
 </head>
 
@@ -125,35 +131,54 @@
     <div class="logo controls__row">
       <a href="//vyrtsev.com"><img src="./horrorse.png"></a>
     </div>
+
+    <div class="controls__label">Canvas size</div>
     <div class="controls__row">
       <input class="winput" type="number" placeholder="width" value="0" max="20000" title="Canvas width">
       <input class="hinput" type="number" placeholder="height" value="0" max="20000" title="Canvas height">
     </div>
+
+    <div class="controls__label">Tile size</div>
     <div class="controls__row">
       <input class="txinput" type="number" placeholder="tile width" value="200" max="3000" title="Tile width">
       <input class="tyinput" type="number" placeholder="time height" value="160" max="3000" title="Tile height">
     </div>
+
     <div class="controls__row">
-      <input type="number" class="zinput" value="2" min="1" step="0.5" max="10" placeholder="scale" title="Scale">
+      <div class="controls__label">Scale</div>
+      <div class="controls__label">Image</div>
+    </div>
+
+    <div class="controls__row">
+      <input type="number" class="zinput" value="0.5" min="1" step="0.5" max="10" placeholder="scale" title="Scale">
       <select class="src"></select>
     </div>
+
+    <div class="controls__label">Filters</div>
+
     <div class="controls__row">
       <div class="applied-filters"></div>
       <div class="filter-stack"></div>
     </div>
+
     <div class="adjustments controls__row">
-      <input type="range" class="adjustments__input saturationInput" step="0.01" value="0" min="-1" max="1"
-        title="Saturation">
-      <input type="range" class="adjustments__input contrastInput" step="0.01" value="0" min="-1" max="1"
-        title="Contrast">
+      <div class="controls__label">Brightness</div>
       <input type="range" class="adjustments__input brightnessInput" step="0.01" value="0" min="-1" max="1"
         title="Brightness">
+      <div class="controls__label">Contrast</div>
+      <input type="range" class="adjustments__input contrastInput" step="0.01" value="0" min="-1" max="1"
+        title="Contrast">
+      <div class="controls__label">Saturation</div>
+      <input type="range" class="adjustments__input saturationInput" step="0.01" value="0" min="-1" max="1"
+        title="Saturation">
     </div>
+
+    <div class="spacer"></div>
+
     <div class="controls__row">
+      <div class="controls__label">Crossfade size</div>
       <input type="number" class="mask-tiles__value" value="45" min="0" step="5" max="300" placeholder="Tile mask size"
         title="Tile mask size">
-      <input type="number" class="distributioninput" value="0" min="0" max="2000" step="10" placeholder="distribution"
-        title="Diffusion">
     </div>
     <div class="dropped-image controls__row">
       <div class="dropped-image__container"></div>
