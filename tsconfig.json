@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "outDir": "./dist/",
+    "strictNullChecks": true,
     "noImplicitAny": true,
     "jsx": "react",
     "allowJs": true,

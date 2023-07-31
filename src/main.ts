@@ -91,7 +91,7 @@ async function main() {
     dom.source.appendChild(opt);
   });
 
-  let droppedImage: HTMLImageElement;
+  let droppedImage: HTMLImageElement | null;
   let selectedImage = await readImage(
     dom.source.options[dom.source.selectedIndex].value
   );

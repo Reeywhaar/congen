@@ -174,7 +174,7 @@ export class C {
       this.ctx.UNSIGNED_BYTE,
       null
     );
-    const fb = this.ctx.createFramebuffer();
+    const fb = this.ctx.createFramebuffer()!;
     this.setFramebuffer(fb);
     this.ctx.framebufferTexture2D(
       this.ctx.FRAMEBUFFER,
@@ -199,7 +199,7 @@ export class C {
   }
 
   setFramebuffer(
-    framebuffer: WebGLFramebuffer,
+    framebuffer: WebGLFramebuffer | null,
     width = this.ctx.canvas.width,
     height = this.ctx.canvas.height
   ) {
