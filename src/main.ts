@@ -21,8 +21,6 @@ async function main() {
   const dom = {
     controls: qs<HTMLDivElement>(".controls"),
     scale: qs<HTMLInputElement>(".zinput"),
-    tileWidth: qs<HTMLInputElement>(".txinput"),
-    tileHeight: qs<HTMLInputElement>(".tyinput"),
     source: qs<HTMLSelectElement>(".src"),
     appliedFilters: qs<HTMLDivElement>(".applied-filters"),
     filterStack: qs<HTMLDivElement>(".filter-stack"),
@@ -63,8 +61,6 @@ async function main() {
 
   [
     dom.scale,
-    dom.tileWidth,
-    dom.tileHeight,
     dom.maskTileSize,
   ].forEach(e => {
     e.addEventListener("keydown", e => {
@@ -158,12 +154,6 @@ async function main() {
     const image = droppedImage || selectedImage;
     const p = {
       image,
-      tileX:
-        Math.min(parseInt(dom.tileWidth.value, 10), image.width) ||
-        canvas.width / 8,
-      tileY:
-        Math.min(parseInt(dom.tileHeight.value, 10), image.width) ||
-        canvas.width / 8,
       maskTileSize: parseInt(dom.maskTileSize.value, 10) || 0,
       distribution: 0,
       scale: parseFloat(dom.scale.value) || 1,
@@ -189,26 +179,31 @@ async function main() {
     );
     const prefs = getPrefs();
 
+    const rng = alea(String(seed))
+
     const c = new C(
       canvas.getContext("webgl", {
         preserveDrawingBuffer:
           location.search.indexOf("nopreserve") > -1 ? false : true,
       })!,
-      alea(String(seed)),
+      rng,
     );
+
+    const tileX = tools.randomInt(prefs.image.width * 0.2, prefs.image.width - prefs.maskTileSize, rng)
+    const tileY = tools.randomInt(prefs.image.height * 0.2, prefs.image.height - prefs.maskTileSize, rng)
 
     let texture = await c.tile(c.createTexture(prefs.image), {
       scale: prefs.scale,
-      srcWidth: prefs.tileX,
-      srcHeight: prefs.tileY,
+      srcWidth: tileX,
+      srcHeight: tileY,
       dstWidth: canvas.width + prefs.distribution * 2,
       dstHeight: canvas.height + prefs.distribution * 2,
     });
     if (prefs.maskTileSize > 0) {
       texture = c.maskTiles(
         texture,
-        prefs.tileX * prefs.scale,
-        prefs.tileY * prefs.scale,
+        tileX * prefs.scale,
+        tileY * prefs.scale,
         prefs.maskTileSize
       );
     }
