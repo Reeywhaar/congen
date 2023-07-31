@@ -3,6 +3,7 @@ import { C } from "./ctools";
 import * as filters from "./filters";
 import images from "./list";
 import { alea } from "seedrandom";
+import { LocalStorageManager } from "./LocalStorageManager";
 
 async function main() {
   const canvas = document.querySelector("canvas")!;
@@ -40,10 +41,9 @@ async function main() {
 
   dom.download.addEventListener("click", async () => {
     const ocanvas = new OffscreenCanvas(100, 100)
-    const width = parseFloat(prompt("Width (default is screen size)", String(canvas.width)))
-    if (!width) return
-    const height = parseFloat(prompt("Height (default is screen size)", String(canvas.height)))
-    if (!height) return
+    const size = getSize(canvas.width, canvas.height)
+    if (!size) return
+    const [width, height] = size
 
     await generate(ocanvas, width, height)
     const blob = await ocanvas.convertToBlob({
@@ -259,6 +259,20 @@ function readImage(url: string) {
     }, 2000);
   });
 }
+
+function getSize(defaultWidth: number, defaultHeight: number): [number, number] | null {
+  const stored = sizeLocalStorage.get()
+  const width = parseFloat(prompt("Width (default is screen size)", String(stored?.at(0) ?? defaultWidth)) ?? "0")
+  if (!width) return null
+  const height = parseFloat(prompt("Height (default is screen size)", String(stored?.at(1) ?? defaultHeight)) ?? "0")
+  if (!height) return null
+
+  sizeLocalStorage.set([width, height])
+
+  return [width, height]
+}
+
+const sizeLocalStorage = new LocalStorageManager<[number, number] | null>("gen__size", (value) => JSON.stringify(value), (value) => value ? JSON.parse(value) : null)
 
 main().catch(e => {
   console.error(e);
