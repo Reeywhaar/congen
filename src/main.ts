@@ -11,31 +11,29 @@ async function main() {
   canvas.height = window.innerHeight;
   let seed = Math.random();
 
+  const dom = new Dom()
 
-  const qs = <T extends Element = Element>(x: string) => {
-    const el = document.querySelector(x);
-    if (!el) throw new Error("el is null");
-    return el as T;
-  };
+  const storedPrefsState = stateLocalStorage.get()
+  if (storedPrefsState) {
+    const prefs = new Prefs(dom)
+    prefs.restore(storedPrefsState)
 
-  const dom = {
-    controls: qs<HTMLDivElement>(".controls"),
-    scale: qs<HTMLInputElement>(".zinput"),
-    source: qs<HTMLSelectElement>(".src"),
-    appliedFilters: qs<HTMLDivElement>(".applied-filters"),
-    filterStack: qs<HTMLDivElement>(".filter-stack"),
-    generate: qs<HTMLButtonElement>(".genb"),
-    maskTileSize: qs<HTMLSelectElement>(".mask-tiles__value"),
-    saturation: qs<HTMLSelectElement>(".saturationInput"),
-    contrast: qs<HTMLSelectElement>(".contrastInput"),
-    brightness: qs<HTMLSelectElement>(".brightnessInput"),
-    download: qs<HTMLButtonElement>(".downloadb"),
-    selectCustom: tools.ensureType<HTMLOptionElement | null>(null)
-  };
+    dom.scale.value = String(prefs.scale)
+    dom.saturation.value = String(prefs.saturation)
+    dom.contrast.value = String(prefs.contrast)
+    dom.brightness.value = String(prefs.brightness)
+    dom.maskTileSize.value = String(prefs.maskTileSize)
+    for (const filter of prefs.appliedEffectsNames) {
+      dom.addFilter(filter)
+    }
+  }
 
-  const fire = tools.debounce(() => {
+  const update = tools.debounce(() => {
+    stateLocalStorage.set(new PrefsSerializer().serialize(new Prefs(dom)))
     generate(canvas, window.innerWidth, window.innerHeight)
   }, 200);
+
+  dom.onChange = update
 
   dom.download.addEventListener("click", async () => {
     const ocanvas = new OffscreenCanvas(100, 100)
@@ -66,18 +64,18 @@ async function main() {
     e.addEventListener("keydown", e => {
       if ((e as any).which === 71) e.preventDefault();
       if ((e as any).which === 13) {
-        fire();
+        update();
       }
     });
   });
 
   document.addEventListener("keydown", e => {
     // 71 is g
-    if (e.which === 71) fire();
+    if (e.which === 71) update();
   });
 
   window.addEventListener("resize", tools.debounce(e => {
-    fire()
+    update()
   }, 200))
 
   images.forEach(src => {
@@ -95,7 +93,7 @@ async function main() {
 
   [dom.brightness, dom.contrast, dom.saturation].forEach(el => {
     el.addEventListener("change", async () => {
-      fire();
+      update();
     });
   })
 
@@ -103,7 +101,7 @@ async function main() {
     const selectedOption = dom.source.options[dom.source.selectedIndex]
     const name = selectedOption.value
     selectedImage = selectedOption.dataset.custom === "true" ? droppedImages[name] : await readImage(name);
-    fire();
+    update();
   });
 
   document.body.addEventListener("dragover", e => {
@@ -135,35 +133,12 @@ async function main() {
     opt.classList.add("filter-item");
     opt.innerText = filter;
     opt.addEventListener("click", e => {
-      const el = document.createElement("div");
-      el.innerText = opt.innerText;
-      el.classList.add("filter-item");
-      el.addEventListener("click", e => {
-        dom.appliedFilters.removeChild(el);
-        fire();
-      });
-      dom.appliedFilters.appendChild(el);
-      fire();
+      dom.addFilter(opt.innerText);
+      update();
     });
     dom.filterStack.appendChild(opt);
   });
 
-  const getPrefs = () => {
-    const image = selectedImage;
-    const p = {
-      image,
-      maskTileSize: parseInt(dom.maskTileSize.value, 10) || 0,
-      distribution: 0,
-      scale: parseFloat(dom.scale.value) || 1,
-      saturation: parseFloat(dom.saturation.value) || 0,
-      contrast: parseFloat(dom.contrast.value) || 0,
-      brightness: parseFloat(dom.brightness.value) || 0,
-      appliedEffects: Array.from(dom.appliedFilters.childNodes)
-        .map(x => (x as HTMLDivElement).innerText)
-        .map(x => filters[x as keyof typeof filters]),
-    };
-    return p;
-  };
 
   const generate = async (canvas: HTMLCanvasElement | OffscreenCanvas, width: number, height: number) => {
     const max = 20000;
@@ -175,7 +150,7 @@ async function main() {
       height,
       max
     );
-    const prefs = getPrefs();
+    const prefs = new Prefs(dom);
 
     const rng = alea(String(seed))
 
@@ -187,10 +162,10 @@ async function main() {
       rng,
     );
 
-    const tileX = tools.randomInt(prefs.image.width * 0.2, prefs.image.width - prefs.maskTileSize, rng)
-    const tileY = tools.randomInt(prefs.image.height * 0.2, prefs.image.height - prefs.maskTileSize, rng)
+    const tileX = tools.randomInt(selectedImage.width * 0.2, selectedImage.width - prefs.maskTileSize, rng)
+    const tileY = tools.randomInt(selectedImage.height * 0.2, selectedImage.height - prefs.maskTileSize, rng)
 
-    let texture = await c.tile(c.createTexture(prefs.image), {
+    let texture = await c.tile(c.createTexture(selectedImage), {
       scale: prefs.scale,
       srcWidth: tileX,
       srcHeight: tileY,
@@ -266,6 +241,116 @@ function getSize(defaultWidth: number, defaultHeight: number): [number, number] 
 }
 
 const sizeLocalStorage = new LocalStorageManager<[number, number] | null>("gen__size", (value) => JSON.stringify(value), (value) => value ? JSON.parse(value) : null)
+
+class Dom {
+  onChange?: () => void
+
+  private qs = <T extends Element = Element>(x: string) => {
+    const el = document.querySelector(x);
+    if (!el) throw new Error("el is null");
+    return el as T;
+  };
+
+  controls = this.qs<HTMLDivElement>(".controls")
+  scale = this.qs<HTMLInputElement>(".zinput")
+  source = this.qs<HTMLSelectElement>(".src")
+  appliedFilters = this.qs<HTMLDivElement>(".applied-filters")
+  filterStack = this.qs<HTMLDivElement>(".filter-stack")
+  generate = this.qs<HTMLButtonElement>(".genb")
+  maskTileSize = this.qs<HTMLSelectElement>(".mask-tiles__value")
+  saturation = this.qs<HTMLSelectElement>(".saturationInput")
+  contrast = this.qs<HTMLSelectElement>(".contrastInput")
+  brightness = this.qs<HTMLSelectElement>(".brightnessInput")
+  download = this.qs<HTMLButtonElement>(".downloadb")
+
+  addFilter(name: string) {
+    const el = document.createElement("div");
+    el.innerText = name;
+    el.classList.add("filter-item");
+    el.addEventListener("click", e => {
+      this.appliedFilters.removeChild(el);
+      this.onChange?.();
+    });
+    this.appliedFilters.appendChild(el);
+  }
+}
+
+class Prefs {
+  maskTileSize: number
+  distribution: number
+  scale: number
+  saturation: number
+  contrast: number
+  brightness: number
+  appliedEffectsNames: string[]
+
+  constructor(dom: Dom) {
+    this.maskTileSize = parseInt(dom.maskTileSize.value, 10) || 0
+    this.distribution = 0
+    this.scale = parseFloat(dom.scale.value) || 1
+    this.saturation = parseFloat(dom.saturation.value) || 0
+    this.contrast = parseFloat(dom.contrast.value) || 0
+    this.brightness = parseFloat(dom.brightness.value) || 0
+    this.appliedEffectsNames = Array.from(dom.appliedFilters.childNodes)
+      .map(x => (x as HTMLDivElement).innerText)
+  }
+
+  restore(state: SerializableState) {
+    this.scale = state.scale
+    this.saturation = state.saturation
+    this.contrast = state.contrast
+    this.brightness = state.brightness
+    this.maskTileSize = state.maskTileSize
+    this.appliedEffectsNames = state.filters
+  }
+
+  get appliedEffects() {
+    return this.appliedEffectsNames.map(x => filters[x as keyof typeof filters])
+  }
+}
+
+type SerializableState = {
+  scale: number
+  filters: string[]
+  brightness: number
+  contrast: number
+  saturation: number
+  maskTileSize: number
+}
+
+class PrefsSerializer {
+  serialize(prefs: Prefs): SerializableState {
+    return {
+      scale: prefs.scale,
+      filters: prefs.appliedEffectsNames,
+      brightness: prefs.brightness,
+      contrast: prefs.contrast,
+      saturation: prefs.saturation,
+      maskTileSize: prefs.maskTileSize,
+    }
+  }
+
+  parse(data?: Record<string, any>): SerializableState | null {
+    if (!data) return null
+    if (typeof data.scale !== "number") return null
+    if (!Array.isArray(data.filters)) return null
+    if (typeof data.brightness !== "number") return null
+    if (typeof data.contrast !== "number") return null
+    if (typeof data.saturation !== "number") return null
+    if (typeof data.maskTileSize !== "number") return null
+
+    return {
+      scale: data.scale,
+      filters: data.filters,
+      brightness: data.brightness,
+      contrast: data.contrast,
+      saturation: data.saturation,
+      maskTileSize: data.maskTileSize,
+    }
+  }
+}
+
+const stateLocalStorage = new LocalStorageManager<SerializableState | null>("gen__state", (value) => JSON.stringify(value), (value) => new PrefsSerializer().parse(JSON.parse(value)))
 
 main().catch(e => {
   console.error(e);
