@@ -70,3 +70,7 @@ export function pipe<FirstFn extends AnyFunc, F extends AnyFunc[]>(
 ): LastFnReturnType<F, ReturnType<FirstFn>> {
   return (fns as AnyFunc[]).reduce((acc, fn) => fn(acc), firstFn(arg));
 }
+
+export function ensureType<T>(v: T): T {
+  return v;
+}

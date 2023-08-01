@@ -30,7 +30,7 @@ async function main() {
     contrast: qs<HTMLSelectElement>(".contrastInput"),
     brightness: qs<HTMLSelectElement>(".brightnessInput"),
     download: qs<HTMLButtonElement>(".downloadb"),
-    droppedImage: qs<HTMLDivElement>(".dropped-image__container"),
+    selectCustom: tools.ensureType<HTMLOptionElement | null>(null)
   };
 
   const fire = tools.debounce(() => {
@@ -87,7 +87,8 @@ async function main() {
     dom.source.appendChild(opt);
   });
 
-  let droppedImage: HTMLImageElement | null;
+  const droppedImages: Record<string, HTMLImageElement> = {}
+
   let selectedImage = await readImage(
     dom.source.options[dom.source.selectedIndex].value
   );
@@ -99,11 +100,9 @@ async function main() {
   })
 
   dom.source.addEventListener("change", async () => {
-    selectedImage = await readImage(
-      dom.source.options[dom.source.selectedIndex].value
-    );
-    dom.droppedImage.innerHTML = "";
-    droppedImage = null;
+    const selectedOption = dom.source.options[dom.source.selectedIndex]
+    const name = selectedOption.value
+    selectedImage = selectedOption.dataset.custom === "true" ? droppedImages[name] : await readImage(name);
     fire();
   });
 
@@ -115,21 +114,20 @@ async function main() {
     e.preventDefault();
     const file = e.dataTransfer?.files[0]
     if (!file) return;
-    const name = file.name;
     const url = URL.createObjectURL(file);
-    droppedImage = await readImage(url);
+    const id = Math.random().toString(36).substring(2, 11)
+    const image = await readImage(url);
 
-    const el = document.createElement("span");
-    el.innerText = `Uploaded image: ${name}`;
-    el.addEventListener("click", () => {
-      dom.droppedImage.removeChild(el);
-      droppedImage = null;
-      fire();
-    });
-    dom.droppedImage.innerHTML = "";
-    dom.droppedImage.appendChild(el);
+    droppedImages[id] = image
 
-    fire();
+    const selectItem = document.createElement("option");
+    selectItem.value = id;
+    selectItem.innerText = id;
+    selectItem.dataset.custom = "true"
+    dom.source.appendChild(selectItem);
+
+    dom.source.value = id
+    dom.source.dispatchEvent(new Event("change"))
   });
 
   Object.keys(filters).forEach(filter => {
@@ -151,7 +149,7 @@ async function main() {
   });
 
   const getPrefs = () => {
-    const image = droppedImage || selectedImage;
+    const image = selectedImage;
     const p = {
       image,
       maskTileSize: parseInt(dom.maskTileSize.value, 10) || 0,

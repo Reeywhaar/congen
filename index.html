@@ -117,20 +117,6 @@
       font-size: 70%;
     }
 
-    .dropped-image {
-      grid-template-columns: minmax(min-content, 280px);
-      box-sizing: border-box;
-    }
-
-    .dropped-image__container {
-      cursor: not-allowed;
-    }
-
-    .dropped-image__container:not(:empty) {
-      margin-top: 18px;
-      margin-bottom: 18px;
-    }
-
     .spacer {
       margin-top: 18px;
     }
@@ -151,7 +137,8 @@
 
     <div class="controls__row">
       <input type="number" class="zinput" value="0.5" min="0.1" step="0.25" max="10" placeholder="scale" title="Scale">
-      <select class="src"></select>
+      <select class="src">
+      </select>
     </div>
 
     <div class="controls__label">Filters</div>
@@ -179,9 +166,6 @@
       <div class="controls__label">Crossfade size</div>
       <input type="number" class="mask-tiles__value" value="45" min="0" step="5" max="300" placeholder="Tile mask size"
         title="Tile mask size">
-    </div>
-    <div class="dropped-image">
-      <div class="dropped-image__container"></div>
     </div>
     <div class="controls__row">
       <button class="genb" title="Generate (G)">Generate</button>
