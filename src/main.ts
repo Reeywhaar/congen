@@ -160,7 +160,7 @@ async function main() {
       canvas.getContext("webgl", {
         preserveDrawingBuffer:
           location.search.indexOf("nopreserve") > -1 ? false : true,
-      })!,
+      }) as WebGLRenderingContext,
       rng,
     );
 
