@@ -6,7 +6,8 @@ module.exports = {
   entry: { app: './src/main.ts' },
   mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
   output: {
-    clean: true
+    clean: true,
+    filename: process.env.NODE_ENV === 'production' ? "[name].[contenthash].js" : undefined,
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.jsx', '.js'],
