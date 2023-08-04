@@ -92,9 +92,8 @@ async function main() {
   );
 
   [dom.brightness, dom.contrast, dom.saturation].forEach(el => {
-    el.addEventListener("change", async () => {
-      update();
-    });
+    el.addEventListener("input", update);
+    el.addEventListener("change", update);
   })
 
   const selectChangeHandler = async () => {
