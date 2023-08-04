@@ -42,6 +42,9 @@ module.exports = {
     compress: true,
     port: 9000,
     allowedHosts: 'all',
+    client: {
+      overlay: false,
+    }
   },
   stats: 'errors-only',
 }

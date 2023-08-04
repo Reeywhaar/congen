@@ -16,7 +16,7 @@ export function debounce<T extends (...args: any[]) => any>(func: T, wait: numbe
   };
 }
 
-export function randomInt(min: number, max: number, rng?: PRNG) {
+export function randomInt(min: number, max: number, rng?: () => number) {
   const rand = rng ? rng() : Math.random();
   return Math.floor(rand * (max - min + 1)) + min;
 }

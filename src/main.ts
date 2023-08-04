@@ -139,7 +139,6 @@ async function main() {
     dom.filterStack.appendChild(opt);
   });
 
-
   const generate = async (canvas: HTMLCanvasElement | OffscreenCanvas, width: number, height: number) => {
     const max = 20000;
     canvas.width = Math.min(
@@ -152,7 +151,8 @@ async function main() {
     );
     const prefs = new Prefs(dom);
 
-    const rng = alea(String(seed))
+    // const rng = alea(String(seed))
+    const rng = () => Math.random()
 
     const c = new C(
       canvas.getContext("webgl", {
@@ -352,6 +352,4 @@ class PrefsSerializer {
 
 const stateLocalStorage = new LocalStorageManager<SerializableState | null>("gen__state", (value) => JSON.stringify(value), (value) => new PrefsSerializer().parse(JSON.parse(value)))
 
-main().catch(e => {
-  console.error(e);
-})
+main()

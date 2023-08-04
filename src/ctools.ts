@@ -6,7 +6,7 @@ import * as programs from "./programs";
 import { alea, PRNG } from "seedrandom"
 
 export class C {
-  rng: PRNG
+  rng: () => number
   ctx: WebGLRenderingContext
   programSource: string = ""
   program: WebGLProgram | null = null
@@ -15,7 +15,7 @@ export class C {
   texCoordBuffer: WebGLBuffer | null = null
   positionBuffer: WebGLBuffer | null = null
 
-  constructor(ctx: WebGLRenderingContext, rng: PRNG) {
+  constructor(ctx: WebGLRenderingContext, rng: () => number) {
     this.rng = rng
     this.ctx = ctx;
   }
