@@ -97,12 +97,15 @@ async function main() {
     });
   })
 
-  dom.source.addEventListener("change", async () => {
+  const selectChangeHandler = async () => {
     const selectedOption = dom.source.options[dom.source.selectedIndex]
     const name = selectedOption.value
     selectedImage = selectedOption.dataset.custom === "true" ? droppedImages[name] : await readImage(name);
     update();
-  });
+  }
+
+  dom.source.addEventListener("change", selectChangeHandler);
+  dom.source.addEventListener("blur", selectChangeHandler); // ios safari
 
   document.body.addEventListener("dragover", e => {
     e.preventDefault();
