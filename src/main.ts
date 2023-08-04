@@ -153,8 +153,7 @@ async function main() {
     );
     const prefs = new Prefs(dom);
 
-    // const rng = alea(String(seed))
-    const rng = () => Math.random()
+    const rng = alea(String(seed))
 
     const c = new C(
       canvas.getContext("webgl", {
