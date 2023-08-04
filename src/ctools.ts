@@ -261,7 +261,11 @@ export class C {
     ];
 
     for (let uniform of [...defaultUniforms, ...uniforms]) {
-      this.setUniform(uniform.key, uniform.type, uniform.value);
+      try {
+        this.setUniform(uniform.key, uniform.type, uniform.value);
+      } catch (e) {
+        console.warn(e);
+      }
     }
 
     const [fr, fbtext] = this.createFramebufferAndTexture(
