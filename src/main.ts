@@ -4,6 +4,7 @@ import * as filters from "./filters";
 import images from "./list";
 import { alea } from "seedrandom";
 import { LocalStorageManager } from "./LocalStorageManager";
+import { Database, DatabaseFile } from "./Database";
 
 async function main() {
   const canvas = document.querySelector("canvas")!;
@@ -12,6 +13,9 @@ async function main() {
   let seed = Math.random();
 
   const dom = new Dom();
+
+  const db = new Database();
+  await db.initialize();
 
   const storedPrefsState = stateLocalStorage.get();
   if (storedPrefsState) {
@@ -75,7 +79,7 @@ async function main() {
     "resize",
     tools.debounce((e) => {
       update();
-    }, 200),
+    }, 200)
   );
 
   images.forEach((src) => {
@@ -88,7 +92,7 @@ async function main() {
   const droppedImages: Record<string, HTMLImageElement> = {};
 
   let selectedImage = await readImage(
-    dom.source.options[dom.source.selectedIndex].value,
+    dom.source.options[dom.source.selectedIndex].value
   );
 
   [dom.brightness, dom.contrast, dom.saturation].forEach((el) => {
@@ -113,12 +117,9 @@ async function main() {
     e.preventDefault();
   });
 
-  document.body.addEventListener("drop", async (e) => {
-    e.preventDefault();
-    const file = e.dataTransfer?.files[0];
-    if (!file) return;
+  const addFile = async (file: DatabaseFile) => {
     const url = URL.createObjectURL(file);
-    const id = Math.random().toString(36).substring(2, 11);
+    const id = file.dbid;
     const image = await readImage(url);
 
     droppedImages[id] = image;
@@ -128,8 +129,26 @@ async function main() {
     selectItem.innerText = id;
     selectItem.dataset.custom = "true";
     dom.source.appendChild(selectItem);
+  };
 
-    dom.source.value = id;
+  try {
+    const images = await db.getImages();
+    images.forEach((file) => {
+      addFile(file);
+    });
+  } catch (e) {
+    console.warn(e);
+  }
+
+  document.body.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer?.files[0];
+    if (!file) return;
+
+    const dbfile = await db.addImage(file);
+    await addFile(dbfile);
+
+    dom.source.value = dbfile.dbid;
     dom.source.dispatchEvent(new Event("change"));
   });
 
@@ -147,7 +166,7 @@ async function main() {
   const generate = async (
     canvas: HTMLCanvasElement | OffscreenCanvas,
     width: number,
-    height: number,
+    height: number
   ) => {
     const max = 20000;
     canvas.width = Math.min(width, max);
@@ -161,18 +180,18 @@ async function main() {
         preserveDrawingBuffer:
           location.search.indexOf("nopreserve") > -1 ? false : true,
       }) as WebGLRenderingContext,
-      rng,
+      rng
     );
 
     const tileX = tools.randomInt(
       selectedImage.width * 0.2,
       selectedImage.width - prefs.maskTileSize,
-      rng,
+      rng
     );
     const tileY = tools.randomInt(
       selectedImage.height * 0.2,
       selectedImage.height - prefs.maskTileSize,
-      rng,
+      rng
     );
 
     let texture = await c.tile(c.createTexture(selectedImage), {
@@ -187,7 +206,7 @@ async function main() {
         texture,
         tileX * prefs.scale,
         tileY * prefs.scale,
-        prefs.maskTileSize,
+        prefs.maskTileSize
       );
     }
     if (prefs.distribution > 0) {
@@ -201,7 +220,7 @@ async function main() {
         texture,
         prefs.saturation,
         prefs.contrast,
-        prefs.brightness,
+        prefs.brightness
       );
     }
     c.render(texture, {
@@ -240,21 +259,21 @@ function readImage(url: string) {
 
 function getSize(
   defaultWidth: number,
-  defaultHeight: number,
+  defaultHeight: number
 ): [number, number] | null {
   const stored = sizeLocalStorage.get();
   const width = parseFloat(
     prompt(
       "Width (default is screen size)",
-      String(stored?.at(0) ?? defaultWidth),
-    ) ?? "0",
+      String(stored?.at(0) ?? defaultWidth)
+    ) ?? "0"
   );
   if (!width) return null;
   const height = parseFloat(
     prompt(
       "Height (default is screen size)",
-      String(stored?.at(1) ?? defaultHeight),
-    ) ?? "0",
+      String(stored?.at(1) ?? defaultHeight)
+    ) ?? "0"
   );
   if (!height) return null;
 
@@ -266,7 +285,7 @@ function getSize(
 const sizeLocalStorage = new LocalStorageManager<[number, number] | null>(
   "gen__size",
   (value) => JSON.stringify(value),
-  (value) => (value ? JSON.parse(value) : null),
+  (value) => (value ? JSON.parse(value) : null)
 );
 
 class Dom {
@@ -319,7 +338,7 @@ class Prefs {
     this.contrast = parseFloat(dom.contrast.value) || 0;
     this.brightness = parseFloat(dom.brightness.value) || 0;
     this.appliedEffectsNames = Array.from(dom.appliedFilters.childNodes).map(
-      (x) => (x as HTMLDivElement).innerText,
+      (x) => (x as HTMLDivElement).innerText
     );
   }
 
@@ -334,7 +353,7 @@ class Prefs {
 
   get appliedEffects() {
     return this.appliedEffectsNames.map(
-      (x) => filters[x as keyof typeof filters],
+      (x) => filters[x as keyof typeof filters]
     );
   }
 }
@@ -383,7 +402,7 @@ class PrefsSerializer {
 const stateLocalStorage = new LocalStorageManager<SerializableState | null>(
   "gen__state",
   (value) => JSON.stringify(value),
-  (value) => new PrefsSerializer().parse(JSON.parse(value)),
+  (value) => new PrefsSerializer().parse(JSON.parse(value))
 );
 
 main();
