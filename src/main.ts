@@ -81,7 +81,7 @@ async function main() {
   images.forEach((src) => {
     const opt = document.createElement("option");
     opt.value = src;
-    opt.innerText = src.substr(src.lastIndexOf("/") + 1);
+    opt.innerText = src.substring(src.lastIndexOf("/") + 1);
     dom.source.appendChild(opt);
   });
 
