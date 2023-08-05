@@ -79,7 +79,7 @@ async function main() {
     "resize",
     tools.debounce((e) => {
       update();
-    }, 200)
+    }, 200),
   );
 
   images.forEach((src) => {
@@ -92,7 +92,7 @@ async function main() {
   const droppedImages: Record<string, HTMLImageElement> = {};
 
   let selectedImage = await readImage(
-    dom.source.options[dom.source.selectedIndex].value
+    dom.source.options[dom.source.selectedIndex].value,
   );
 
   [dom.brightness, dom.contrast, dom.saturation].forEach((el) => {
@@ -143,7 +143,7 @@ async function main() {
     prefs.restore(storedPrefsState);
     if (prefs.source) {
       const ind = Array.from(dom.source.options).findIndex(
-        (o) => o.value === prefs.source
+        (o) => o.value === prefs.source,
       );
       if (ind !== -1) {
         dom.source.selectedIndex = ind;
@@ -178,7 +178,7 @@ async function main() {
   const generate = async (
     canvas: HTMLCanvasElement | OffscreenCanvas,
     width: number,
-    height: number
+    height: number,
   ) => {
     const max = 20000;
     canvas.width = Math.min(width, max);
@@ -192,18 +192,18 @@ async function main() {
         preserveDrawingBuffer:
           location.search.indexOf("nopreserve") > -1 ? false : true,
       }) as WebGLRenderingContext,
-      rng
+      rng,
     );
 
     const tileX = tools.randomInt(
       selectedImage.width * 0.2,
       selectedImage.width - prefs.maskTileSize,
-      rng
+      rng,
     );
     const tileY = tools.randomInt(
       selectedImage.height * 0.2,
       selectedImage.height - prefs.maskTileSize,
-      rng
+      rng,
     );
 
     let texture = await c.tile(c.createTexture(selectedImage), {
@@ -218,7 +218,7 @@ async function main() {
         texture,
         tileX * prefs.scale,
         tileY * prefs.scale,
-        prefs.maskTileSize
+        prefs.maskTileSize,
       );
     }
     if (prefs.distribution > 0) {
@@ -232,7 +232,7 @@ async function main() {
         texture,
         prefs.saturation,
         prefs.contrast,
-        prefs.brightness
+        prefs.brightness,
       );
     }
     c.render(texture, {
@@ -271,21 +271,21 @@ function readImage(url: string) {
 
 function getSize(
   defaultWidth: number,
-  defaultHeight: number
+  defaultHeight: number,
 ): [number, number] | null {
   const stored = sizeLocalStorage.get();
   const width = parseFloat(
     prompt(
       "Width (default is screen size)",
-      String(stored?.at(0) ?? defaultWidth)
-    ) ?? "0"
+      String(stored?.at(0) ?? defaultWidth),
+    ) ?? "0",
   );
   if (!width) return null;
   const height = parseFloat(
     prompt(
       "Height (default is screen size)",
-      String(stored?.at(1) ?? defaultHeight)
-    ) ?? "0"
+      String(stored?.at(1) ?? defaultHeight),
+    ) ?? "0",
   );
   if (!height) return null;
 
@@ -297,7 +297,7 @@ function getSize(
 const sizeLocalStorage = new LocalStorageManager<[number, number] | null>(
   "gen__size",
   (value) => JSON.stringify(value),
-  (value) => (value ? JSON.parse(value) : null)
+  (value) => (value ? JSON.parse(value) : null),
 );
 
 class Dom {
@@ -352,7 +352,7 @@ class Prefs {
     this.contrast = parseFloat(dom.contrast.value) || 0;
     this.brightness = parseFloat(dom.brightness.value) || 0;
     this.appliedEffectsNames = Array.from(dom.appliedFilters.childNodes).map(
-      (x) => (x as HTMLDivElement).innerText
+      (x) => (x as HTMLDivElement).innerText,
     );
   }
 
@@ -372,7 +372,7 @@ class Prefs {
 
   get appliedEffects() {
     return this.appliedEffectsNames.map(
-      (x) => filters[x as keyof typeof filters]
+      (x) => filters[x as keyof typeof filters],
     );
   }
 }
@@ -421,7 +421,7 @@ class PrefsSerializer {
 const stateLocalStorage = new LocalStorageManager<SerializableState | null>(
   "gen__state",
   (value) => JSON.stringify(value),
-  (value) => new PrefsSerializer().parse(JSON.parse(value))
+  (value) => new PrefsSerializer().parse(JSON.parse(value)),
 );
 
 main();

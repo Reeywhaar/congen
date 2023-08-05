@@ -3,7 +3,7 @@ import { PRNG } from "seedrandom";
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number,
-  immediate: boolean = false
+  immediate: boolean = false,
 ): (...args: Parameters<T>) => void {
   var timeout: ReturnType<typeof setTimeout> | null = null;
   return function () {
@@ -80,7 +80,7 @@ export function ensureType<T>(v: T): T {
 }
 
 export const createSortHandler = <T extends any>(
-  weightsExtractor: (a: T) => number[]
+  weightsExtractor: (a: T) => number[],
 ) => {
   const cache = new Map<T, number[]>();
   return (a: T, b: T) => {

@@ -58,11 +58,11 @@ export class Database {
             .map((x) => {
               let file = new File(
                 [new Uint8Array(x.data)],
-                x.name
+                x.name,
               ) as DatabaseFile;
               file.dbid = x.id;
               return file;
-            })
+            }),
         );
       };
     });
@@ -84,7 +84,7 @@ export class Database {
           }
           resolve(Array.from(result));
         },
-        false
+        false,
       );
       reader.addEventListener("error", (e) => {
         reject(new Error(`Can't read file: ${e.type}`));
