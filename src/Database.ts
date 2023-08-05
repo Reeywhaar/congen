@@ -1,3 +1,5 @@
+import { createSortHandler } from "./tools";
+
 export class Database {
   private db!: IDBDatabase;
   async initialize() {
@@ -37,7 +39,8 @@ export class Database {
       id,
       name: image.name,
       data,
-    });
+      addedAt: Date.now(),
+    } satisfies SerializedFile);
     tx.commit();
     const out = image as DatabaseFile;
     out.dbid = id;
@@ -50,14 +53,16 @@ export class Database {
     return new Promise<DatabaseFile[]>((resolve) => {
       tx.objectStore("images").getAll().onsuccess = function () {
         resolve(
-          this.result.map((x: SerializedFile) => {
-            let file = new File(
-              [new Uint8Array(x.data)],
-              x.name
-            ) as DatabaseFile;
-            file.dbid = x.id;
-            return file;
-          })
+          (this.result as SerializedFile[])
+            .sort(createSortHandler((x) => [-x.addedAt]))
+            .map((x) => {
+              let file = new File(
+                [new Uint8Array(x.data)],
+                x.name
+              ) as DatabaseFile;
+              file.dbid = x.id;
+              return file;
+            })
         );
       };
     });
@@ -94,6 +99,7 @@ type SerializedFile = {
   id: string;
   name: string;
   data: number[];
+  addedAt: number;
 };
 
 export type DatabaseFile = File & {
