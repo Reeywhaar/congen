@@ -100,3 +100,24 @@ export const createSortHandler = <T extends any>(
     return 0;
   };
 };
+
+export function promptImage() {
+  return new Promise<File | null>((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = () => {
+      if (input.files && input.files.length > 0) {
+        resolve(input.files[0]);
+      } else {
+        resolve(null);
+      }
+      document.body.removeChild(input);
+    };
+
+    input.hidden = true;
+    document.body.appendChild(input);
+
+    input.click();
+  });
+}

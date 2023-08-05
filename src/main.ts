@@ -91,24 +91,42 @@ async function main() {
 
   const droppedImages: Record<string, HTMLImageElement> = {};
 
-  let selectedImage = await readImage(
-    dom.source.options[dom.source.selectedIndex].value,
-  );
+  let selectedImage = [
+    dom.source.selectedIndex,
+    await readImage(dom.source.options[dom.source.selectedIndex].value),
+  ] as const;
 
   [dom.brightness, dom.contrast, dom.saturation].forEach((el) => {
     el.addEventListener("input", update);
     el.addEventListener("change", update);
   });
 
-  const selectChangeHandler = async () => {
-    const selectedOption = dom.source.options[dom.source.selectedIndex];
-    const name = selectedOption.value;
-    selectedImage =
-      selectedOption.dataset.custom === "true"
-        ? droppedImages[name]
-        : await readImage(name);
-    update();
-  };
+  const selectChangeHandler = tools.debounce(
+    async () => {
+      const selectedOption = dom.source.options[dom.source.selectedIndex];
+      if (selectedOption.value === UPLOAD_CUSTOM_OPTION_ID) {
+        dom.source.selectedIndex = selectedImage[0];
+
+        const file = await tools.promptImage();
+        if (!file) return;
+
+        addFile(file);
+
+        return;
+      }
+
+      const name = selectedOption.value;
+      selectedImage = [
+        dom.source.selectedIndex,
+        selectedOption.dataset.custom === "true"
+          ? droppedImages[name]
+          : await readImage(name),
+      ];
+      update();
+    },
+    100,
+    true,
+  );
 
   dom.source.addEventListener("change", selectChangeHandler);
   dom.source.addEventListener("blur", selectChangeHandler); // ios safari
@@ -117,7 +135,7 @@ async function main() {
     e.preventDefault();
   });
 
-  const addFile = async (file: DatabaseFile) => {
+  const addDatabaseFileToSelect = async (file: DatabaseFile) => {
     const url = URL.createObjectURL(file);
     const id = file.dbid;
     const image = await readImage(url);
@@ -128,14 +146,29 @@ async function main() {
     selectItem.value = id;
     selectItem.innerText = id;
     selectItem.dataset.custom = "true";
-    dom.source.appendChild(selectItem);
+    dom.source.insertBefore(selectItem, dom.uploadOption);
+  };
+
+  const addFile = async (file: File) => {
+    const dbfile = await db.addImage(file);
+    await addDatabaseFileToSelect(dbfile);
+    dom.source.value = dbfile.dbid;
+    dom.source.dispatchEvent(new Event("change"));
   };
 
   try {
     const images = await db.getImages();
-    await Promise.all(images.map((file) => addFile(file)));
+    await Promise.all(images.map((file) => addDatabaseFileToSelect(file)));
   } catch (e) {
     console.warn(e);
+  }
+
+  {
+    const uploadOption = document.createElement("option");
+    dom.uploadOption = uploadOption;
+    uploadOption.value = UPLOAD_CUSTOM_OPTION_ID;
+    uploadOption.innerText = "Upload image...";
+    dom.source.appendChild(uploadOption);
   }
 
   if (storedPrefsState) {
@@ -157,11 +190,7 @@ async function main() {
     const file = e.dataTransfer?.files[0];
     if (!file) return;
 
-    const dbfile = await db.addImage(file);
-    await addFile(dbfile);
-
-    dom.source.value = dbfile.dbid;
-    dom.source.dispatchEvent(new Event("change"));
+    await addFile(file);
   });
 
   Object.keys(filters).forEach((filter) => {
@@ -196,17 +225,17 @@ async function main() {
     );
 
     const tileX = tools.randomInt(
-      selectedImage.width * 0.2,
-      selectedImage.width - prefs.maskTileSize,
+      selectedImage[1].width * 0.2,
+      selectedImage[1].width - prefs.maskTileSize,
       rng,
     );
     const tileY = tools.randomInt(
-      selectedImage.height * 0.2,
-      selectedImage.height - prefs.maskTileSize,
+      selectedImage[1].height * 0.2,
+      selectedImage[1].height - prefs.maskTileSize,
       rng,
     );
 
-    let texture = await c.tile(c.createTexture(selectedImage), {
+    let texture = await c.tile(c.createTexture(selectedImage[1]), {
       scale: prefs.scale,
       srcWidth: tileX,
       srcHeight: tileY,
@@ -312,6 +341,7 @@ class Dom {
   controls = this.qs<HTMLDivElement>(".controls");
   scale = this.qs<HTMLInputElement>(".zinput");
   source = this.qs<HTMLSelectElement>(".src");
+  uploadOption: HTMLOptionElement;
   appliedFilters = this.qs<HTMLDivElement>(".applied-filters");
   filterStack = this.qs<HTMLDivElement>(".filter-stack");
   generate = this.qs<HTMLButtonElement>(".genb");
@@ -423,5 +453,7 @@ const stateLocalStorage = new LocalStorageManager<SerializableState | null>(
   (value) => JSON.stringify(value),
   (value) => new PrefsSerializer().parse(JSON.parse(value)),
 );
+
+const UPLOAD_CUSTOM_OPTION_ID = "upload-custom";
 
 main();
