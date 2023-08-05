@@ -5,6 +5,11 @@ import images from "./list";
 import { alea } from "seedrandom";
 import { LocalStorageManager } from "./LocalStorageManager";
 import { Database, DatabaseFile } from "./Database";
+import { PrefsSerializer } from "./PrefsSerializer";
+import { Prefs } from "./Prefs";
+import { Dom } from "./Dom";
+import { SerializableState } from "./SerializableState";
+import { SizePrompt } from "./SizePrompt";
 
 async function main() {
   const canvas = document.querySelector("canvas")!;
@@ -41,7 +46,7 @@ async function main() {
 
   dom.download.addEventListener("click", async () => {
     const ocanvas = new OffscreenCanvas(100, 100);
-    const size = getSize(canvas.width, canvas.height);
+    const size = new SizePrompt().prompt(canvas.width, canvas.height);
     if (!size) return;
     const [width, height] = size;
 
@@ -93,7 +98,7 @@ async function main() {
 
   let selectedImage = [
     dom.source.selectedIndex,
-    await readImage(dom.source.options[dom.source.selectedIndex].value),
+    await tools.readImage(dom.source.options[dom.source.selectedIndex].value),
   ] as const;
 
   [dom.brightness, dom.contrast, dom.saturation].forEach((el) => {
@@ -120,7 +125,7 @@ async function main() {
         dom.source.selectedIndex,
         selectedOption.dataset.custom === "true"
           ? droppedImages[name]
-          : await readImage(name),
+          : await tools.readImage(name),
       ];
       update();
     },
@@ -138,7 +143,7 @@ async function main() {
   const addDatabaseFileToSelect = async (file: DatabaseFile) => {
     const url = URL.createObjectURL(file);
     const id = file.dbid;
-    const image = await readImage(url);
+    const image = await tools.readImage(url);
 
     droppedImages[id] = image;
 
@@ -276,176 +281,6 @@ async function main() {
   });
 
   dom.generate.click();
-}
-
-function readImage(url: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image();
-    image.addEventListener("load", () => {
-      if (image.width === 0 || image.height === 0) {
-        reject(new Error(`Unable to get image ${url}`));
-        return;
-      }
-      resolve(image);
-    });
-    image.addEventListener("error", (e) => {
-      reject(new Error(`Unable to get image ${url}`));
-    });
-    image.src = url;
-    setTimeout(() => {
-      reject(new Error(`Unable to get image ${url}`));
-    }, 2000);
-  });
-}
-
-function getSize(
-  defaultWidth: number,
-  defaultHeight: number,
-): [number, number] | null {
-  const stored = sizeLocalStorage.get();
-  const width = parseFloat(
-    prompt(
-      "Width (default is screen size)",
-      String(stored?.at(0) ?? defaultWidth),
-    ) ?? "0",
-  );
-  if (!width) return null;
-  const height = parseFloat(
-    prompt(
-      "Height (default is screen size)",
-      String(stored?.at(1) ?? defaultHeight),
-    ) ?? "0",
-  );
-  if (!height) return null;
-
-  sizeLocalStorage.set([width, height]);
-
-  return [width, height];
-}
-
-const sizeLocalStorage = new LocalStorageManager<[number, number] | null>(
-  "gen__size",
-  (value) => JSON.stringify(value),
-  (value) => (value ? JSON.parse(value) : null),
-);
-
-class Dom {
-  onChange?: () => void;
-
-  private qs = <T extends Element = Element>(x: string) => {
-    const el = document.querySelector(x);
-    if (!el) throw new Error("el is null");
-    return el as T;
-  };
-
-  controls = this.qs<HTMLDivElement>(".controls");
-  scale = this.qs<HTMLInputElement>(".zinput");
-  source = this.qs<HTMLSelectElement>(".src");
-  uploadOption: HTMLOptionElement;
-  appliedFilters = this.qs<HTMLDivElement>(".applied-filters");
-  filterStack = this.qs<HTMLDivElement>(".filter-stack");
-  generate = this.qs<HTMLButtonElement>(".genb");
-  maskTileSize = this.qs<HTMLSelectElement>(".mask-tiles__value");
-  saturation = this.qs<HTMLSelectElement>(".saturationInput");
-  contrast = this.qs<HTMLSelectElement>(".contrastInput");
-  brightness = this.qs<HTMLSelectElement>(".brightnessInput");
-  download = this.qs<HTMLButtonElement>(".downloadb");
-
-  addFilter(name: string) {
-    const el = document.createElement("div");
-    el.innerText = name;
-    el.classList.add("filter-item");
-    el.addEventListener("click", (e) => {
-      this.appliedFilters.removeChild(el);
-      this.onChange?.();
-    });
-    this.appliedFilters.appendChild(el);
-  }
-}
-
-class Prefs {
-  source: string;
-  maskTileSize: number;
-  distribution: number;
-  scale: number;
-  saturation: number;
-  contrast: number;
-  brightness: number;
-  appliedEffectsNames: string[];
-
-  constructor(dom: Dom) {
-    this.source = dom.source.value;
-    this.maskTileSize = parseInt(dom.maskTileSize.value, 10) || 0;
-    this.distribution = 0;
-    this.scale = parseFloat(dom.scale.value) || 1;
-    this.saturation = parseFloat(dom.saturation.value) || 0;
-    this.contrast = parseFloat(dom.contrast.value) || 0;
-    this.brightness = parseFloat(dom.brightness.value) || 0;
-    this.appliedEffectsNames = Array.from(dom.appliedFilters.childNodes).map(
-      (x) => (x as HTMLDivElement).innerText,
-    );
-  }
-
-  restore(state: SerializableState) {
-    if (typeof state.source !== "undefined") this.source = state.source;
-    if (typeof state.scale !== "undefined") this.scale = state.scale;
-    if (typeof state.saturation !== "undefined")
-      this.saturation = state.saturation;
-    if (typeof state.contrast !== "undefined") this.contrast = state.contrast;
-    if (typeof state.brightness !== "undefined")
-      this.brightness = state.brightness;
-    if (typeof state.maskTileSize !== "undefined")
-      this.maskTileSize = state.maskTileSize;
-    if (typeof state.filters !== "undefined")
-      this.appliedEffectsNames = state.filters;
-  }
-
-  get appliedEffects() {
-    return this.appliedEffectsNames.map(
-      (x) => filters[x as keyof typeof filters],
-    );
-  }
-}
-
-type SerializableState = {
-  source?: string;
-  scale?: number;
-  filters?: string[];
-  brightness?: number;
-  contrast?: number;
-  saturation?: number;
-  maskTileSize?: number;
-};
-
-class PrefsSerializer {
-  serialize(prefs: Prefs): SerializableState {
-    return {
-      source: prefs.source,
-      scale: prefs.scale,
-      filters: prefs.appliedEffectsNames,
-      brightness: prefs.brightness,
-      contrast: prefs.contrast,
-      saturation: prefs.saturation,
-      maskTileSize: prefs.maskTileSize,
-    };
-  }
-
-  parse(data?: Record<string, any>): SerializableState | null {
-    if (!data) return null;
-
-    return {
-      source: data.source,
-      scale: typeof data.scale === "number" ? data.scale : undefined,
-      filters: Array.isArray(data.filters) ? data.filters : undefined,
-      brightness:
-        typeof data.brightness === "number" ? data.brightness : undefined,
-      contrast: typeof data.contrast === "number" ? data.contrast : undefined,
-      saturation:
-        typeof data.saturation === "number" ? data.saturation : undefined,
-      maskTileSize:
-        typeof data.maskTileSize === "number" ? data.maskTileSize : undefined,
-    };
-  }
 }
 
 const stateLocalStorage = new LocalStorageManager<SerializableState | null>(

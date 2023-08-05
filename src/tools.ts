@@ -121,3 +121,23 @@ export function promptImage() {
     input.click();
   });
 }
+
+export function readImage(url: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener("load", () => {
+      if (image.width === 0 || image.height === 0) {
+        reject(new Error(`Unable to get image ${url}`));
+        return;
+      }
+      resolve(image);
+    });
+    image.addEventListener("error", (e) => {
+      reject(new Error(`Unable to get image ${url}`));
+    });
+    image.src = url;
+    setTimeout(() => {
+      reject(new Error(`Unable to get image ${url}`));
+    }, 2000);
+  });
+}
