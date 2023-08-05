@@ -133,11 +133,23 @@ async function main() {
 
   try {
     const images = await db.getImages();
-    images.forEach((file) => {
-      addFile(file);
-    });
+    await Promise.all(images.map((file) => addFile(file)));
   } catch (e) {
     console.warn(e);
+  }
+
+  if (storedPrefsState) {
+    const prefs = new Prefs(dom);
+    prefs.restore(storedPrefsState);
+    if (prefs.source) {
+      const ind = Array.from(dom.source.options).findIndex(
+        (o) => o.value === prefs.source
+      );
+      if (ind !== -1) {
+        dom.source.selectedIndex = ind;
+        dom.source.dispatchEvent(new Event("change"));
+      }
+    }
   }
 
   document.body.addEventListener("drop", async (e) => {
@@ -322,6 +334,7 @@ class Dom {
 }
 
 class Prefs {
+  source: string;
   maskTileSize: number;
   distribution: number;
   scale: number;
@@ -331,6 +344,7 @@ class Prefs {
   appliedEffectsNames: string[];
 
   constructor(dom: Dom) {
+    this.source = dom.source.value;
     this.maskTileSize = parseInt(dom.maskTileSize.value, 10) || 0;
     this.distribution = 0;
     this.scale = parseFloat(dom.scale.value) || 1;
@@ -343,12 +357,17 @@ class Prefs {
   }
 
   restore(state: SerializableState) {
-    this.scale = state.scale;
-    this.saturation = state.saturation;
-    this.contrast = state.contrast;
-    this.brightness = state.brightness;
-    this.maskTileSize = state.maskTileSize;
-    this.appliedEffectsNames = state.filters;
+    if (typeof state.source !== "undefined") this.source = state.source;
+    if (typeof state.scale !== "undefined") this.scale = state.scale;
+    if (typeof state.saturation !== "undefined")
+      this.saturation = state.saturation;
+    if (typeof state.contrast !== "undefined") this.contrast = state.contrast;
+    if (typeof state.brightness !== "undefined")
+      this.brightness = state.brightness;
+    if (typeof state.maskTileSize !== "undefined")
+      this.maskTileSize = state.maskTileSize;
+    if (typeof state.filters !== "undefined")
+      this.appliedEffectsNames = state.filters;
   }
 
   get appliedEffects() {
@@ -359,17 +378,19 @@ class Prefs {
 }
 
 type SerializableState = {
-  scale: number;
-  filters: string[];
-  brightness: number;
-  contrast: number;
-  saturation: number;
-  maskTileSize: number;
+  source?: string;
+  scale?: number;
+  filters?: string[];
+  brightness?: number;
+  contrast?: number;
+  saturation?: number;
+  maskTileSize?: number;
 };
 
 class PrefsSerializer {
   serialize(prefs: Prefs): SerializableState {
     return {
+      source: prefs.source,
       scale: prefs.scale,
       filters: prefs.appliedEffectsNames,
       brightness: prefs.brightness,
@@ -381,20 +402,18 @@ class PrefsSerializer {
 
   parse(data?: Record<string, any>): SerializableState | null {
     if (!data) return null;
-    if (typeof data.scale !== "number") return null;
-    if (!Array.isArray(data.filters)) return null;
-    if (typeof data.brightness !== "number") return null;
-    if (typeof data.contrast !== "number") return null;
-    if (typeof data.saturation !== "number") return null;
-    if (typeof data.maskTileSize !== "number") return null;
 
     return {
-      scale: data.scale,
-      filters: data.filters,
-      brightness: data.brightness,
-      contrast: data.contrast,
-      saturation: data.saturation,
-      maskTileSize: data.maskTileSize,
+      source: data.source,
+      scale: typeof data.scale === "number" ? data.scale : undefined,
+      filters: Array.isArray(data.filters) ? data.filters : undefined,
+      brightness:
+        typeof data.brightness === "number" ? data.brightness : undefined,
+      contrast: typeof data.contrast === "number" ? data.contrast : undefined,
+      saturation:
+        typeof data.saturation === "number" ? data.saturation : undefined,
+      maskTileSize:
+        typeof data.maskTileSize === "number" ? data.maskTileSize : undefined,
     };
   }
 }
