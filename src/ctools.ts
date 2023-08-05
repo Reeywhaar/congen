@@ -3,20 +3,20 @@ import { gmap, pipe, randomInt, range, sleep } from "./tools";
 import Gen from "@reeywhaar/iterator";
 import Texture from "./texture";
 import * as programs from "./programs";
-import { alea, PRNG } from "seedrandom"
+import { alea, PRNG } from "seedrandom";
 
 export class C {
-  rng: () => number
-  ctx: WebGLRenderingContext
-  programSource: string = ""
-  program: WebGLProgram | null = null
-  texCoordLocation: number | null = null
-  positionLocation: number | null = null
-  texCoordBuffer: WebGLBuffer | null = null
-  positionBuffer: WebGLBuffer | null = null
+  rng: () => number;
+  ctx: WebGLRenderingContext;
+  programSource: string = "";
+  program: WebGLProgram | null = null;
+  texCoordLocation: number | null = null;
+  positionLocation: number | null = null;
+  texCoordBuffer: WebGLBuffer | null = null;
+  positionBuffer: WebGLBuffer | null = null;
 
   constructor(ctx: WebGLRenderingContext, rng: () => number) {
-    this.rng = rng
+    this.rng = rng;
     this.ctx = ctx;
   }
 
@@ -32,7 +32,7 @@ export class C {
     if (!this.ctx.getShaderParameter(shader, this.ctx.COMPILE_STATUS)) {
       throw new Error(
         "An error occurred compiling the shaders: " +
-        this.ctx.getShaderInfoLog(shader)
+          this.ctx.getShaderInfoLog(shader),
       );
     }
 
@@ -46,11 +46,11 @@ export class C {
   getProgram(vertextShaderSource: string, fragmentShaderSource: string) {
     const vertexShader = this.getShader(
       this.ctx.VERTEX_SHADER,
-      vertextShaderSource
+      vertextShaderSource,
     );
     const fragmentShader = this.getShader(
       this.ctx.FRAGMENT_SHADER,
-      fragmentShaderSource
+      fragmentShaderSource,
     );
 
     const shaderProgram = this.ctx.createProgram()!;
@@ -61,7 +61,7 @@ export class C {
     if (!this.ctx.getProgramParameter(shaderProgram, this.ctx.LINK_STATUS)) {
       throw new Error(
         "Unable to initialize the shader program: " +
-        this.ctx.getProgramInfoLog(shaderProgram)
+          this.ctx.getProgramInfoLog(shaderProgram),
       );
     }
 
@@ -71,7 +71,9 @@ export class C {
   setProgram(programSource: string) {
     if (this.programSource === programSource) return;
     this.programSource = programSource;
-    const program = this.getProgram(...this.programSource.split("//SPLIT") as [string, string]);
+    const program = this.getProgram(
+      ...(this.programSource.split("//SPLIT") as [string, string]),
+    );
 
     this.program = program;
 
@@ -92,7 +94,7 @@ export class C {
           0, 1,
           1, 1,
         ]),
-        this.ctx.STATIC_DRAW
+        this.ctx.STATIC_DRAW,
       );
 
     const fillAttribPointer = (loc: number) =>
@@ -124,22 +126,22 @@ export class C {
     this.ctx.texParameteri(
       this.ctx.TEXTURE_2D,
       this.ctx.TEXTURE_WRAP_S,
-      this.ctx.CLAMP_TO_EDGE
+      this.ctx.CLAMP_TO_EDGE,
     );
     this.ctx.texParameteri(
       this.ctx.TEXTURE_2D,
       this.ctx.TEXTURE_WRAP_T,
-      this.ctx.CLAMP_TO_EDGE
+      this.ctx.CLAMP_TO_EDGE,
     );
     this.ctx.texParameteri(
       this.ctx.TEXTURE_2D,
       this.ctx.TEXTURE_MIN_FILTER,
-      this.ctx.NEAREST
+      this.ctx.NEAREST,
     );
     this.ctx.texParameteri(
       this.ctx.TEXTURE_2D,
       this.ctx.TEXTURE_MAG_FILTER,
-      this.ctx.NEAREST
+      this.ctx.NEAREST,
     );
 
     if (image) {
@@ -149,7 +151,7 @@ export class C {
         this.ctx.RGBA,
         this.ctx.RGBA,
         this.ctx.UNSIGNED_BYTE,
-        image
+        image,
       );
 
       return new Texture(texture, image.width, image.height);
@@ -160,7 +162,7 @@ export class C {
 
   createFramebufferAndTexture(
     width = this.ctx.canvas.width,
-    height = this.ctx.canvas.height
+    height = this.ctx.canvas.height,
   ) {
     const fbtext = this.createTexture();
     this.ctx.texImage2D(
@@ -172,7 +174,7 @@ export class C {
       0,
       this.ctx.RGBA,
       this.ctx.UNSIGNED_BYTE,
-      null
+      null,
     );
     const fb = this.ctx.createFramebuffer()!;
     this.setFramebuffer(fb);
@@ -181,7 +183,7 @@ export class C {
       this.ctx.COLOR_ATTACHMENT0,
       this.ctx.TEXTURE_2D,
       fbtext.texture,
-      0
+      0,
     );
     if (
       this.ctx.checkFramebufferStatus(this.ctx.FRAMEBUFFER) !==
@@ -201,7 +203,7 @@ export class C {
   setFramebuffer(
     framebuffer: WebGLFramebuffer | null,
     width = this.ctx.canvas.width,
-    height = this.ctx.canvas.height
+    height = this.ctx.canvas.height,
   ) {
     this.ctx.bindFramebuffer(this.ctx.FRAMEBUFFER, framebuffer);
     this.ctx.viewport(0, 0, width, height);
@@ -231,7 +233,11 @@ export class C {
     (this.ctx as any)[`uniform${type}`](loc, ...value);
   }
 
-  applyProgram(texture: { width: number, height: number, texture: WebGLTexture }, program: string, uniforms: { key: string, type: string, value: any }[] = []) {
+  applyProgram(
+    texture: { width: number; height: number; texture: WebGLTexture },
+    program: string,
+    uniforms: { key: string; type: string; value: any }[] = [],
+  ) {
     this.setProgram(program);
 
     const defaultUniforms = [
@@ -245,7 +251,7 @@ export class C {
         type: "Matrix4fv",
         value: pipe(
           twgl.m4.ortho(0, texture.width, 0, texture.height, -1, 1),
-          matrix => twgl.m4.scale(matrix, [texture.width, texture.height, 1])
+          (matrix) => twgl.m4.scale(matrix, [texture.width, texture.height, 1]),
         ),
       },
       {
@@ -270,7 +276,7 @@ export class C {
 
     const [fr, fbtext] = this.createFramebufferAndTexture(
       texture.width,
-      texture.height
+      texture.height,
     );
 
     this.setFramebuffer(fr, texture.width, texture.height);
@@ -293,7 +299,7 @@ export class C {
       scale = 1,
       flipY = false,
       flipX = false,
-    } = {}
+    } = {},
   ) {
     if (!texture.width) throw new Error("textureWidth required");
     if (!texture.height) throw new Error("textureHeight required");
@@ -316,23 +322,24 @@ export class C {
 
     let matrix = pipe(
       twgl.m4.ortho(0, dstWidth, dstHeight, 0, -1, 1),
-      matrix => twgl.m4.translate(matrix, [dstX, dstY, 0]),
-      matrix => twgl.m4.scale(matrix, [srcWidth * scale, srcHeight * scale, 1])
+      (matrix) => twgl.m4.translate(matrix, [dstX, dstY, 0]),
+      (matrix) =>
+        twgl.m4.scale(matrix, [srcWidth * scale, srcHeight * scale, 1]),
     );
 
     if (flipY) {
       matrix = pipe(
         matrix,
-        matrix => twgl.m4.scale(matrix, [1, -1, 1]),
-        matrix => twgl.m4.translate(matrix, [0, -1, 0])
+        (matrix) => twgl.m4.scale(matrix, [1, -1, 1]),
+        (matrix) => twgl.m4.translate(matrix, [0, -1, 0]),
       );
     }
 
     if (flipX) {
       matrix = pipe(
         matrix,
-        matrix => twgl.m4.scale(matrix, [-1, 1, 1]),
-        matrix => twgl.m4.translate(matrix, [-1, 0, 0])
+        (matrix) => twgl.m4.scale(matrix, [-1, 1, 1]),
+        (matrix) => twgl.m4.translate(matrix, [-1, 0, 0]),
       );
     }
 
@@ -340,7 +347,7 @@ export class C {
 
     const texMatrix = pipe(
       twgl.m4.translation([srcX / texture.width, srcY / texture.height, 0]),
-      matrix => {
+      (matrix) => {
         if (srcWidth === texture.width && srcHeight === texture.height)
           return matrix;
         return twgl.m4.scale(matrix, [
@@ -348,7 +355,7 @@ export class C {
           srcHeight / texture.height,
           1,
         ]);
-      }
+      },
     );
 
     this.ctx.uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
@@ -371,7 +378,7 @@ export class C {
       scale = 1,
       flipY = false,
       flipX = false,
-    } = {}
+    } = {},
   ) {
     if (!srcWidth) srcWidth = image.width;
     if (!srcHeight) srcHeight = image.height;
@@ -403,7 +410,7 @@ export class C {
       scale: scale = 1,
       dstHeight: dstHeight = this.ctx.canvas.height,
       dstWidth: dstWidth = this.ctx.canvas.width,
-    } = {}
+    } = {},
   ) {
     if (!srcWidth) srcWidth = texture.width;
     if (!srcHeight) srcHeight = texture.height;
@@ -414,8 +421,8 @@ export class C {
     let [fb, fbtext] = this.createFramebufferAndTexture(dstWidth, dstHeight);
     this.setFramebuffer(fb, dstWidth, dstHeight);
 
-    for (let row of gmap(range(rows), x => x * srcHeight * scale)) {
-      for (let col of gmap(range(columns), x => x * srcWidth * scale)) {
+    for (let row of gmap(range(rows), (x) => x * srcHeight * scale)) {
+      for (let col of gmap(range(columns), (x) => x * srcWidth * scale)) {
         this.drawTexture(texture, {
           srcX: randomInt(0, texture.width - srcWidth, this.rng),
           srcY: randomInt(0, texture.height - srcHeight, this.rng),
@@ -469,7 +476,7 @@ export class C {
 
     let matrix = pipe(
       twgl.m4.ortho(0, texture.width, 0, texture.height, -1, 1),
-      matrix => twgl.m4.scale(matrix, [texture.width, texture.height, 1])
+      (matrix) => twgl.m4.scale(matrix, [texture.width, texture.height, 1]),
     );
 
     this.ctx.uniformMatrix4fv(matrixLocation, false, matrix);
@@ -496,7 +503,7 @@ export class C {
         return new Texture(
           fb[index % 2][1].texture,
           texture.width,
-          texture.height
+          texture.height,
         );
     }
 
@@ -566,7 +573,7 @@ export class C {
           value: 0,
         },
       ]),
-      texture =>
+      (texture) =>
         this.applyProgram(texture, programs.antitile, [
           {
             key: "tile",
@@ -578,7 +585,7 @@ export class C {
             type: "1i",
             value: 1,
           },
-        ])
+        ]),
     );
   }
 
@@ -589,7 +596,7 @@ export class C {
       srcY = 0,
       srcWidth = texture.width,
       srcHeight = texture.height,
-    } = {}
+    } = {},
   ) {
     this.setFramebuffer(null, this.ctx.canvas.width, this.ctx.canvas.height);
     this.drawTexture(texture, {
