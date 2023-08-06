@@ -109,7 +109,7 @@
     }
 
     .medium-grey {
-      height: 40px;
+      height: 60px;
       background-color: rgb(127, 127, 127);
       position: relative;
       bottom: -2px;
@@ -118,8 +118,16 @@
     }
 
     .logo {
+      display: grid;
       grid-template-columns: minmax(min-content, auto);
-      text-align: center;
+      align-items: center;
+      justify-content: end;
+    }
+
+    .logo__img {
+      width: 50px;
+      height: 50px;
+      display: block;
     }
 
     .mask-tiles__label {
@@ -135,10 +143,6 @@
 <body>
   <canvas width="0" height="0"></canvas>
   <div class="controls">
-    <div class="logo controls__row">
-      <a href="//vyrtsev.com"><img src="./horrorse.png"></a>
-    </div>
-
     <div class="controls__row controls__labels">
       <div class="controls__label">Image</div>
     </div>
@@ -182,7 +186,9 @@
       <button class="genb" title="Generate (G)">Generate</button>
       <button class="downloadb">Download</button>
     </div>
-    <div class="medium-grey"></div>
+    <div class="medium-grey logo">
+      <a href="//vyrtsev.com"><img src="./horrorse.png" class="logo__img"></a>
+    </div>
   </div>
 </body>
 
