@@ -10,14 +10,15 @@
     "build:watch": "webpack --watch",
     "build:production": "NODE_ENV=production webpack",
     "deploy": "rsync -arvuzn --delete ./ webmachine:/var/sites/vyrtsev.com/www/static/congen/ --exclude .git --exclude makefile --exclude .DS_Store --exclude .gitignore --exclude package.json --exclude package-lock.json",
-    "lint": "prettier ./src --write"
+    "lint": "prettier ./src --write",
+    "tscheck": "tsc --noEmit"
   },
   "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@reeywhaar/iterator": "^0.4.0",
+    "@reeywhaar/iterator": "^0.7.0",
     "seedrandom": "^3.0.5",
     "twgl.js": "^4.4.0"
   },

@@ -3,7 +3,6 @@ import { gmap, pipe, randomInt, range, sleep } from "./tools";
 import Gen from "@reeywhaar/iterator";
 import Texture from "./texture";
 import * as programs from "./programs";
-import { alea, PRNG } from "seedrandom";
 
 export class C {
   rng: () => number;
@@ -528,7 +527,7 @@ export class C {
         key: "distribution",
         type: "1fv",
         value: Gen.range(8)
-          .subSplit(function* (_i) {
+          .flatMap(function* (_i) {
             yield randomInt(0, distribution / 2, this.rng);
             yield randomInt(0, distribution / 2, this.rng);
             yield randomInt(10, distribution, this.rng);
