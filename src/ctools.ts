@@ -1,8 +1,9 @@
 import * as twgl from "twgl.js";
-import { gmap, pipe, randomInt, range, sleep } from "./tools";
+import { gmap, randomInt, range, sleep } from "./tools";
 import Gen from "@reeywhaar/iterator";
 import Texture from "./texture";
 import * as programs from "./programs";
+import { Monad } from "./Monad";
 
 export class C {
   rng: () => number;
@@ -248,10 +249,11 @@ export class C {
       {
         key: "matrix",
         type: "Matrix4fv",
-        value: pipe(
+        value: new Monad(
           twgl.m4.ortho(0, texture.width, 0, texture.height, -1, 1),
-          (matrix) => twgl.m4.scale(matrix, [texture.width, texture.height, 1]),
-        ),
+        ).map((matrix) =>
+          twgl.m4.scale(matrix, [texture.width, texture.height, 1]),
+        ).value,
       },
       {
         key: "textureMatrix",
@@ -319,43 +321,37 @@ export class C {
 
     this.ctx.uniform1i(textureLocation, 0);
 
-    let matrix = pipe(
-      twgl.m4.ortho(0, dstWidth, dstHeight, 0, -1, 1),
-      (matrix) => twgl.m4.translate(matrix, [dstX, dstY, 0]),
-      (matrix) =>
+    let matrix = new Monad(twgl.m4.ortho(0, dstWidth, dstHeight, 0, -1, 1))
+      .map((matrix) => twgl.m4.translate(matrix, [dstX, dstY, 0]))
+      .map((matrix) =>
         twgl.m4.scale(matrix, [srcWidth * scale, srcHeight * scale, 1]),
-    );
+      ).value;
 
     if (flipY) {
-      matrix = pipe(
-        matrix,
-        (matrix) => twgl.m4.scale(matrix, [1, -1, 1]),
-        (matrix) => twgl.m4.translate(matrix, [0, -1, 0]),
-      );
+      matrix = new Monad(matrix)
+        .map((matrix) => twgl.m4.scale(matrix, [1, -1, 1]))
+        .map((matrix) => twgl.m4.translate(matrix, [0, -1, 0])).value;
     }
 
     if (flipX) {
-      matrix = pipe(
-        matrix,
-        (matrix) => twgl.m4.scale(matrix, [-1, 1, 1]),
-        (matrix) => twgl.m4.translate(matrix, [-1, 0, 0]),
-      );
+      matrix = new Monad(matrix)
+        .map((matrix) => twgl.m4.scale(matrix, [-1, 1, 1]))
+        .map((matrix) => twgl.m4.translate(matrix, [-1, 0, 0])).value;
     }
 
     this.ctx.uniformMatrix4fv(matrixLocation, false, matrix);
 
-    const texMatrix = pipe(
+    const texMatrix = new Monad(
       twgl.m4.translation([srcX / texture.width, srcY / texture.height, 0]),
-      (matrix) => {
-        if (srcWidth === texture.width && srcHeight === texture.height)
-          return matrix;
-        return twgl.m4.scale(matrix, [
-          srcWidth / texture.width,
-          srcHeight / texture.height,
-          1,
-        ]);
-      },
-    );
+    ).map((matrix) => {
+      if (srcWidth === texture.width && srcHeight === texture.height)
+        return matrix;
+      return twgl.m4.scale(matrix, [
+        srcWidth / texture.width,
+        srcHeight / texture.height,
+        1,
+      ]);
+    }).value;
 
     this.ctx.uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
 
@@ -473,10 +469,11 @@ export class C {
     this.ctx.uniform1i(textureLocation, 0);
     this.ctx.uniform2f(textureSizeLocation, texture.width, texture.height);
 
-    let matrix = pipe(
+    let matrix = new Monad(
       twgl.m4.ortho(0, texture.width, 0, texture.height, -1, 1),
-      (matrix) => twgl.m4.scale(matrix, [texture.width, texture.height, 1]),
-    );
+    ).map((matrix) =>
+      twgl.m4.scale(matrix, [texture.width, texture.height, 1]),
+    ).value;
 
     this.ctx.uniformMatrix4fv(matrixLocation, false, matrix);
 
@@ -559,7 +556,7 @@ export class C {
   }
 
   maskTiles(texture: Texture, x: number, y: number, size = 20) {
-    return pipe(
+    return new Monad(
       this.applyProgram(texture, programs.antitile, [
         {
           key: "tile",
@@ -572,20 +569,20 @@ export class C {
           value: 0,
         },
       ]),
-      (texture) =>
-        this.applyProgram(texture, programs.antitile, [
-          {
-            key: "tile",
-            type: "3f",
-            value: [x, y, size],
-          },
-          {
-            key: "direction",
-            type: "1i",
-            value: 1,
-          },
-        ]),
-    );
+    ).map((texture) =>
+      this.applyProgram(texture, programs.antitile, [
+        {
+          key: "tile",
+          type: "3f",
+          value: [x, y, size],
+        },
+        {
+          key: "direction",
+          type: "1i",
+          value: 1,
+        },
+      ]),
+    ).value;
   }
 
   render(
