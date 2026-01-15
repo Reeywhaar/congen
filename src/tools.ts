@@ -1,4 +1,6 @@
-import { PRNG } from "seedrandom";
+export function invariant(e: Error): never {
+  throw e;
+}
 
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
