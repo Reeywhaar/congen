@@ -2,9 +2,9 @@ export class Dom {
   onChange?: () => void;
 
   private qs = <T extends Element = Element>(x: string) => {
-    const el = document.querySelector(x);
+    const el = document.querySelector<T>(x);
     if (!el) throw new Error("el is null");
-    return el as T;
+    return el;
   };
 
   controls = this.qs<HTMLDivElement>(".controls");
