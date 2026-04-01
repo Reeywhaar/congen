@@ -17,19 +17,18 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@reeywhaar/iterator": "^0.7.0",
     "seedrandom": "^3.0.5",
-    "twgl.js": "^4.4.0"
+    "twgl.js": "^7.0.0"
   },
   "devDependencies": {
     "@types/seedrandom": "^3.0.5",
-    "copy-webpack-plugin": "^11.0.0",
+    "copy-webpack-plugin": "^14.0.0",
     "html-webpack-plugin": "^5.5.3",
     "prettier": "^3.0.1",
     "ts-loader": "^9.4.4",
-    "typescript": "^5.1.6",
+    "typescript": "^6.0.2",
     "webpack": "^5.88.2",
-    "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^4.15.1"
+    "webpack-cli": "^7.0.2",
+    "webpack-dev-server": "^5.2.3"
   }
 }

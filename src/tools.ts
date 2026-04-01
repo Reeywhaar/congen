@@ -8,9 +8,9 @@ export function debounce<T extends (...args: any[]) => any>(
   immediate: boolean = false,
 ): (...args: Parameters<T>) => void {
   var timeout: ReturnType<typeof setTimeout> | null = null;
-  return function () {
+  return function (this: any) {
     var context = this,
-      args = arguments;
+      args = arguments as unknown as any[];
     var later = function () {
       timeout = null;
       if (!immediate) func.apply(context, args);

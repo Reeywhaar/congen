@@ -151,6 +151,7 @@ async function main() {
     selectItem.value = id;
     selectItem.innerText = id;
     selectItem.dataset.custom = "true";
+    if(!dom.uploadOption) throw new Error("Upload option not found");
     dom.source.insertBefore(selectItem, dom.uploadOption);
   };
 

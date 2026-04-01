@@ -1,6 +1,5 @@
 import * as twgl from "twgl.js";
 import { gmap, randomInt, range, sleep } from "./tools";
-import Gen from "@reeywhaar/iterator";
 import Texture from "./texture";
 import * as programs from "./programs";
 import { Monad } from "./Monad";
@@ -514,6 +513,7 @@ export class C {
    * @returns Texture
    */
   diffuse(texture: Texture, distribution = 120) {
+    const self = this
     return this.applyProgram(texture, programs.diffuse, [
       {
         key: "distributionSize",
@@ -523,14 +523,13 @@ export class C {
       {
         key: "distribution",
         type: "1fv",
-        value: Gen.range(8)
+        value: new Array(8).fill(0)
           .flatMap(function* (_i) {
-            yield randomInt(0, distribution / 2, this.rng);
-            yield randomInt(0, distribution / 2, this.rng);
-            yield randomInt(10, distribution, this.rng);
-            yield randomInt(10, distribution, this.rng);
-          })
-          .toArray(),
+            yield randomInt(0, distribution / 2, self.rng);
+            yield randomInt(0, distribution / 2, self.rng);
+            yield randomInt(10, distribution, self.rng);
+            yield randomInt(10, distribution, self.rng);
+          }),
       },
     ]);
   }

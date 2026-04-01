@@ -1,12 +1,17 @@
 {
   "compilerOptions": {
+    "rootDir": "./",
     "outDir": "./dist/",
     "strictNullChecks": true,
     "noImplicitAny": true,
     "jsx": "react",
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "allowJs": true,
     "target": "ES6",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "sourceMap": true
   },
   "include": [
