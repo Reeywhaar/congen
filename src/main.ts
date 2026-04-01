@@ -151,7 +151,7 @@ async function main() {
     selectItem.value = id;
     selectItem.innerText = id;
     selectItem.dataset.custom = "true";
-    if(!dom.uploadOption) throw new Error("Upload option not found");
+    if (!dom.uploadOption) throw new Error("Upload option not found");
     dom.source.insertBefore(selectItem, dom.uploadOption);
   };
 
@@ -292,4 +292,6 @@ const stateLocalStorage = new LocalStorageManager<SerializableState | null>(
 
 const UPLOAD_CUSTOM_OPTION_ID = "upload-custom";
 
-main();
+main().catch((e) => {
+  console.error(e);
+});

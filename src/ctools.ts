@@ -513,7 +513,7 @@ export class C {
    * @returns Texture
    */
   diffuse(texture: Texture, distribution = 120) {
-    const self = this
+    const self = this;
     return this.applyProgram(texture, programs.diffuse, [
       {
         key: "distributionSize",
@@ -523,13 +523,12 @@ export class C {
       {
         key: "distribution",
         type: "1fv",
-        value: new Array(8).fill(0)
-          .flatMap(function* (_i) {
-            yield randomInt(0, distribution / 2, self.rng);
-            yield randomInt(0, distribution / 2, self.rng);
-            yield randomInt(10, distribution, self.rng);
-            yield randomInt(10, distribution, self.rng);
-          }),
+        value: new Array(8).fill(0).flatMap(function* (_i) {
+          yield randomInt(0, distribution / 2, self.rng);
+          yield randomInt(0, distribution / 2, self.rng);
+          yield randomInt(10, distribution, self.rng);
+          yield randomInt(10, distribution, self.rng);
+        }),
       },
     ]);
   }
