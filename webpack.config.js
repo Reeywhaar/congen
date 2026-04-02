@@ -8,6 +8,7 @@ export default {
   entry: { app: './src/main.ts' },
   mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
   output: {
+    path: path.resolve(__dirname, 'build/frontend'),
     clean: true,
     filename: process.env.NODE_ENV === 'production' ? "[name].[contenthash].js" : undefined,
   },
@@ -40,7 +41,7 @@ export default {
   ],
   devServer: {
     static: {
-      directory: path.join(__dirname, 'dist'),
+      directory: path.join(__dirname, 'build/frontend'),
     },
     compress: true,
     port: 9000,
