@@ -10,6 +10,9 @@
     "ghcr.io/devcontainers/features/node:1": {
       "version": "lts"
     },
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "latest"
+    },
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
       "moby": false
     }
@@ -28,7 +31,8 @@
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "github.copilot",
-        "reduckted.vscode-gitweblinks"
+        "reduckted.vscode-gitweblinks",
+        "golang.go"
       ]
     }
   },
