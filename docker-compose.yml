@@ -1,0 +1,8 @@
+
+name: texgen.vyrtsev.com
+services:
+  app:
+    build: .
+    ports:
+      - "9000:80"
+    restart: unless-stopped
