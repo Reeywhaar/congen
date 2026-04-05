@@ -46,6 +46,7 @@ export default {
       directory: path.join(__dirname, 'build/frontend'),
     },
     compress: true,
+    host: "0.0.0.0",
     port: 9000,
     allowedHosts: 'all',
     client: {

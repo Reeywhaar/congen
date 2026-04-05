@@ -13,8 +13,9 @@ import { SizePrompt } from "./SizePrompt";
 
 async function main() {
   const canvas = document.querySelector("canvas")!;
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const size = getSafeAreaSize();
+  canvas.width = size.width;
+  canvas.height = size.height;
   let seed = Math.random();
 
   const dom = new Dom();
@@ -39,7 +40,8 @@ async function main() {
 
   const update = tools.debounce(() => {
     stateLocalStorage.set(new PrefsSerializer().serialize(new Prefs(dom)));
-    generate(canvas, window.innerWidth, window.innerHeight);
+    const size = getSafeAreaSize();
+    generate(canvas, size.width, size.height);
   }, 200);
 
   dom.onChange = update;
@@ -291,6 +293,10 @@ const stateLocalStorage = new LocalStorageManager<SerializableState | null>(
 );
 
 const UPLOAD_CUSTOM_OPTION_ID = "upload-custom";
+
+function getSafeAreaSize() {
+  return document.body.getBoundingClientRect();
+}
 
 main().catch((e) => {
   console.error(e);
