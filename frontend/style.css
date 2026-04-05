@@ -16,7 +16,8 @@ body {
   background: rgb(127, 127, 127);
 }
 
-input {
+input,
+button {
   touch-action: manipulation;
 }
 
