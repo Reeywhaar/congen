@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="keywords" content="webgl, canvas, texture generator, canvas generator, paper texture, concrete texture">
+  <meta name="author" content="Misha Vyrtsev">
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="stylesheet" href="style.css">
+  <title>Vyrtsev Texture Generator</title>
+</head>
+
+<body>
+  <canvas width="0" height="0"></canvas>
+  <div class="controls">
+    <div class="controls__row controls__labels">
+      <div class="controls__label">Image</div>
+    </div>
+
+    <div class="controls__row controls__row_single">
+      <select class="src"></select>
+    </div>
+
+    <div class="controls__label">Filters</div>
+
+    <div class="controls__row">
+      <div class="applied-filters"></div>
+      <div class="filter-stack"></div>
+    </div>
+
+    <div class="adjustments controls__row">
+      <div class="controls__label">Brightness</div>
+      <input type="range" class="adjustments__input brightnessInput" step="0.01" value="0" min="-1" max="1"
+        title="Brightness">
+      <div class="controls__label">Contrast</div>
+      <input type="range" class="adjustments__input contrastInput" step="0.01" value="0" min="-1" max="1"
+        title="Contrast">
+      <div class="controls__label">Saturation</div>
+      <input type="range" class="adjustments__input saturationInput" step="0.01" value="0" min="-1" max="1"
+        title="Saturation">
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="controls__row controls__labels">
+      <div class="controls__label">Scale</div>
+      <div class="controls__label">Crossfade size</div>
+    </div>
+
+    <div class="controls__row">
+      <input type="number" class="zinput" value="0.5" min="0.1" step="0.25" max="10" placeholder="scale" title="Scale">
+      <input type="number" class="mask-tiles__value" value="45" min="0" step="5" max="300" placeholder="Tile mask size"
+        title="Tile mask size">
+    </div>
+    <div class="controls__row">
+      <button class="genb" title="Generate (G)">Generate</button>
+      <button class="downloadb">Download</button>
+    </div>
+    <div class="medium-grey logo">
+      <a href="//vyrtsev.com">
+        <img src="/horrorse.png" class="logo__img">
+      </a>
+    </div>
+  </div>
+</body>
+
+</html>

@@ -5,6 +5,7 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 export default {
+  context: path.resolve(__dirname, 'frontend'),
   entry: { app: './src/main.ts' },
   mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
   output: {
@@ -35,6 +36,7 @@ export default {
     new CopyWebpackPlugin({
       patterns: [
         { from: "img", to: "img" },
+        { from: "style.css", to: "style.css" },
         { from: "assets" },
       ],
     }),
